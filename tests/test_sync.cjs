@@ -46,7 +46,8 @@ async function fakeGoogle(ctx, base) {
     // Comme le vrai Google : réponses autorisées pour l'appli (CORS), y compris la requête préalable de Safari
     const cors = { 'Access-Control-Allow-Origin': h['origin'] || '*', 'Access-Control-Allow-Headers': 'Authorization, Content-Type', 'Access-Control-Allow-Methods': 'GET, POST, PATCH, OPTIONS' };
     if (m === 'OPTIONS') return route.fulfill({ status: 204, headers: cors, body: '' });
-    if (!/^Bearer at-/.test(h['authorization'] || '')) return route.fulfill({ status: 401, headers: cors, body: '{}' });
+    // Jeton vérifié quand l'en-tête est visible (WebKit ne montre pas toujours Authorization aux tests) ; un mauvais jeton est refusé.
+    if (h['authorization'] !== undefined && !/^Bearer at-/.test(h['authorization'])) return route.fulfill({ status: 401, headers: cors, body: '{}' });
     const send = (o, status = 200) => route.fulfill({ status, headers: cors, contentType: 'application/json', body: typeof o === 'string' ? o : JSON.stringify(o) });
     const meta = f => ({ id: f.id, name: f.name, version: String(f.version), modifiedTime: f.modifiedTime });
     if (m === 'GET' && u.pathname === '/drive/v3/files') {
