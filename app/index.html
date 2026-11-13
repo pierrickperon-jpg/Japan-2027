@@ -117,7 +117,7 @@ nav#nav a.on{color:var(--shu)}
    Japon 2027 — appli de préparation et de voyage (PWA, données locales).
    Règles : voir CLAUDE.md du dépôt. Aucune donnée personnelle dans ce fichier.
    ===================================================================== */
-const APP_VERSION = '2026.11.13-4';
+const APP_VERSION = '2026.11.13-5';
 const DB_NAME = 'japon-2027', DB_VERSION = 1;
 const STORES = ['idees', 'etapes', 'jours', 'rappels', 'billets', 'depenses', 'meta', 'sauvegardes'];
 const DATA_STORES = ['idees', 'etapes', 'jours', 'rappels', 'billets', 'depenses'];
@@ -200,7 +200,7 @@ const getAll = s => reqP(db.transaction(s, 'readonly').objectStore(s).getAll());
 async function putMany(store, recs) { const t = db.transaction(store, 'readwrite'); const os = t.objectStore(store); for (const r of recs) os.put(r); await txDone(t); }
 // File d'écriture : les enregistrements partent dans l'ordre, une erreur n'arrête pas les suivants.
 let WQ = Promise.resolve();
-function persist(store, recs) { const copies = recs.map(r => JSON.parse(JSON.stringify(r))); const p = WQ.then(() => putMany(store, copies)); WQ = p.catch(() => {}); return p; }
+function persist(store, recs) { const copies = recs.map(r => JSON.parse(JSON.stringify(r))); const p = WQ.then(() => putMany(store, copies)); WQ = p.catch(() => {}); p.then(() => driveLocalChange()).catch(() => {}); return p; }
 async function saveRec(store, rec) {
   const t = now(); rec.updatedAt = t; if (!rec.createdAt) rec.createdAt = t;
   const arr = S[store]; if (!arr.includes(rec)) { const i = arr.findIndex(x => x.id === rec.id); if (i >= 0) arr[i] = rec; else arr.push(rec); }
@@ -432,7 +432,7 @@ function validatePayload(p) {
       for (const k of Object.keys(r)) if (bad(k)) throw new Error('Fichier refusé.');
       if (s === 'billets' && r.fichiers !== undefined) {
         if (!Array.isArray(r.fichiers)) throw new Error('Fichier abîmé (pièces jointes).');
-        for (const f of r.fichiers) if (!f || !ID_RE.test(f.id || '') || !DATA_URL_RE.test(f.data || '')) throw new Error('Pièce jointe refusée (ni photo ni PDF).');
+        for (const f of r.fichiers) if (!f || !ID_RE.test(f.id || '') || (f.data !== undefined && !DATA_URL_RE.test(String(f.data)))) throw new Error('Pièce jointe refusée (ni photo ni PDF).');
       }
       if ((s === 'idees' || s === 'etapes') && r.vignette && !IMG_RE.test(String(r.vignette))) throw new Error('Image refusée dans le fichier.');
       if (s === 'billets' && r.fichiersRetires !== undefined && (!Array.isArray(r.fichiersRetires) || r.fichiersRetires.some(x => !ID_RE.test(String(x))))) throw new Error('Fichier abîmé (pièces retirées).');
@@ -445,7 +445,7 @@ function validatePayload(p) {
 function mergeFichiers(l, r) {
   const out = Object.assign({}, r);
   const ret = new Set([].concat(l.fichiersRetires || [], r.fichiersRetires || []));
-  const map = new Map(); for (const f of (l.fichiers || [])) map.set(f.id, f); for (const f of (r.fichiers || [])) map.set(f.id, f);
+  const map = new Map(); for (const f of (l.fichiers || [])) map.set(f.id, f); for (const f of (r.fichiers || [])) { const lf = map.get(f.id); map.set(f.id, lf && lf.data && !f.data ? lf : f); }
   out.fichiers = [...map.values()].filter(f => !ret.has(f.id));
   if (ret.size) out.fichiersRetires = [...ret];
   if (!r.fichiersOmis || (l.fichiers || []).length) delete out.fichiersOmis;
@@ -479,10 +479,12 @@ async function applyPlan(mp) {
   if (mp.set) t.objectStore('meta').put(mp.set);
   await txDone(t);
   await reloadAll();
+  driveLocalChange();
 }
 async function reloadAll() {
   for (const s of DATA_STORES) S[s] = await getAll(s);
   SET = (await reqP(db.transaction('meta', 'readonly').objectStore('meta').get('settings'))) || { id: 'settings' };
+  for (const k of DRIVE_METAS) DRV[k] = (await reqP(db.transaction('meta', 'readonly').objectStore('meta').get(k))) || null;
   BLOBS.forEach(u => URL.revokeObjectURL(u)); BLOBS.clear();
 }
 // Décale journées, étapes et jours de visite de n jours (copie de sécurité avant, une seule transaction).
@@ -502,7 +504,7 @@ async function shiftTrip(n) {
   for (const s of ['etapes', 'rappels', 'jours']) for (const r of W[s]) tx.objectStore(s).put(r);
   tx.objectStore('meta').put(JSON.parse(JSON.stringify(SET)));
   await txDone(tx);
-  await reloadAll();
+  await reloadAll(); driveLocalChange();
 }
 async function shareOrDownload(name, mime, content) {
   const file = new File([content], name, { type: mime });
@@ -516,6 +518,261 @@ async function shareOrDownload(name, mime, content) {
 }
 const stamp = () => { const d = new Date(); return ymd(d).replace(/-/g, '') + '-' + String(d.getHours()).padStart(2, '0') + String(d.getMinutes()).padStart(2, '0'); };
 const slug = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '').toLowerCase().slice(0, 30);
+
+/* ---------- Synchronisation Google Drive (lot 4) ----------
+   Comme dans CRM Terrain : les données sont chiffrées sur le téléphone (AES-GCM, clé tirée d'une phrase secrète,
+   PBKDF2) puis rangées dans le dossier caché de l'appli sur le Drive (appDataFolder, autorisation drive.appdata).
+   Les DEUX téléphones se connectent au MÊME compte Google et tapent la même phrase. Fichier principal
+   japon-2027-sync.json (tout sauf le contenu des pièces jointes) + un fichier chiffré par pièce jointe (pj-<id>).
+   Le code secret de l'appli Google reste dans Netlify (fonction /api/google-oauth), jamais dans le navigateur.
+   Restent sur le téléphone seulement : jeton (driveAuth), clé (driveKey), état (driveState). */
+const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.appdata';
+const DRIVE_NAME = 'japon-2027-sync.json', DRIVE_APP = 'japon-2027-sync', DRIVE_ITER = 310000;
+const DRIVE_API = 'https://www.googleapis.com', DRIVE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth', DRIVE_FN = '/api/google-oauth';
+const DRIVE_PENDING = 'japon-oauth-pending', DRIVE_RESULT = 'japon-oauth-result';
+const DRIVE_METAS = ['driveAuth', 'driveKey', 'driveState'];
+const DRV = { driveAuth: null, driveKey: null, driveState: null };
+const DRIVE = { cfg: null, access: null, busy: false, again: false, timer: 0, msg: '', pkce: null, hasRemote: undefined };
+const b64 = u8 => { let s = ''; const a = new Uint8Array(u8); for (let i = 0; i < a.length; i += 32768) s += String.fromCharCode.apply(null, a.subarray(i, i + 32768)); return btoa(s); };
+const unb64 = s => { const b = atob(s), u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u; };
+const b64u = u8 => b64(u8).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+const rand = n => crypto.getRandomValues(new Uint8Array(n));
+const DS = () => DRV.driveState || {};
+async function setDrv(k, v) { DRV[k] = v ? Object.assign({ id: k }, v) : null; const t = db.transaction('meta', 'readwrite'); if (v) t.objectStore('meta').put(DRV[k]); else t.objectStore('meta').delete(k); await txDone(t); }
+async function setDS(patch) { await setDrv('driveState', Object.assign({}, DS(), patch)); }
+const driveReady = () => !!(DRV.driveAuth && DRV.driveAuth.refresh && DRV.driveKey && DRV.driveKey.raw);
+async function driveProbe() { try { const r = await fetch(DRIVE_FN, { cache: 'no-store' }); const j = await r.json(); DRIVE.cfg = r.ok && j.ready === true && j.clientId ? j : false; } catch (e) { DRIVE.cfg = false; } driveRender(); }
+// Chiffrement
+async function deriveRaw(pass, salt, iter) { const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pass), 'PBKDF2', false, ['deriveBits']); return new Uint8Array(await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt, iterations: iter }, base, 256)); }
+const aesKey = raw => crypto.subtle.importKey('raw', raw, 'AES-GCM', false, ['encrypt', 'decrypt']);
+async function gz(bytes, on) { if (typeof CompressionStream !== 'function' || typeof DecompressionStream !== 'function') return null; const st = new Blob([bytes]).stream().pipeThrough(on ? new CompressionStream('gzip') : new DecompressionStream('gzip')); return new Uint8Array(await new Response(st).arrayBuffer()); }
+async function driveEncrypt(obj) {
+  const k = DRV.driveKey, key = await aesKey(unb64(k.raw)), iv = rand(12);
+  let bytes = new TextEncoder().encode(JSON.stringify(obj)), z = false; const c = await gz(bytes, true).catch(() => null); if (c) { bytes = c; z = true; }
+  const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, bytes));
+  return JSON.stringify({ app: DRIVE_APP, v: 1, kdf: 'PBKDF2-SHA256', iter: k.iter, salt: k.salt, iv: b64(iv), gz: z, ct: b64(ct) });
+}
+async function driveDecrypt(text, raw) {
+  let f; try { f = JSON.parse(text); } catch (e) { f = null; }
+  if (!f || f.app !== DRIVE_APP || f.v !== 1) throw Object.assign(new Error('Fichier Drive inconnu'), { code: 'format' });
+  let bytes; try { bytes = new Uint8Array(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(f.iv) }, await aesKey(raw), unb64(f.ct))); }
+  catch (e) { throw Object.assign(new Error('Phrase secrète différente de celle de l’autre téléphone'), { code: 'pass' }); }
+  if (f.gz) { const z = await gz(bytes, false); if (!z) throw Object.assign(new Error('Ce navigateur ne sait pas lire le fichier Drive'), { code: 'gzip' }); bytes = z; }
+  return JSON.parse(new TextDecoder().decode(bytes));
+}
+// Connexion Google : fenêtre ouverte dans le toucher, PKCE, jeton durable ; le code secret reste dans Netlify.
+async function drivePreparePkce() { const v = b64u(rand(48)); DRIVE.pkce = { verifier: v, challenge: b64u(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(v)))) }; }
+const driveRedirect = () => location.origin + '/';
+function driveOauthCallback() {
+  const q = new URLSearchParams(location.search); if (!q.get('state') || !(q.get('code') || q.get('error'))) return false;
+  let pend = null; try { pend = JSON.parse(localStorage.getItem(DRIVE_PENDING) || 'null'); } catch (e) { /* rien */ }
+  try { history.replaceState(null, '', location.pathname + location.hash); } catch (e) { /* rien */ }
+  if (!pend || pend.state !== q.get('state')) return false;
+  const res = { state: q.get('state'), code: q.get('code') || '', error: q.get('error') || '' };
+  try { localStorage.setItem(DRIVE_RESULT, JSON.stringify(res)); } catch (e) { /* rien */ }
+  try { if (window.opener && window.opener !== window) window.opener.postMessage(Object.assign({ type: 'japon-oauth' }, res), location.origin); } catch (e) { /* rien */ }
+  document.body.innerHTML = `<div style="font:17px system-ui;padding:40px 24px;text-align:center">${res.code ? 'Connexion à Google réussie.<br>Vous pouvez revenir à l’appli.' : 'Connexion à Google annulée.'}</div>`;
+  setTimeout(() => { try { window.close(); } catch (e) { /* rien */ } }, 400);
+  return true;
+}
+function driveConnect() {
+  if (!DRIVE.cfg) { toast('Connexion Google pas encore prête', true); return; }
+  if (!DRIVE.pkce) { toast('Un instant, puis touchez à nouveau'); drivePreparePkce(); return; }
+  const state = b64u(rand(16)), pk = DRIVE.pkce; DRIVE.pkce = null;
+  try { localStorage.removeItem(DRIVE_RESULT); localStorage.setItem(DRIVE_PENDING, JSON.stringify({ state, verifier: pk.verifier, at: Date.now() })); } catch (e) { /* rien */ }
+  const url = DRIVE_AUTH_URL + '?' + new URLSearchParams({ client_id: DRIVE.cfg.clientId, redirect_uri: driveRedirect(), response_type: 'code', scope: DRIVE_SCOPE, access_type: 'offline', prompt: 'consent select_account', state, code_challenge: pk.challenge, code_challenge_method: 'S256' });
+  const w = window.open(url, 'japon-google', 'width=500,height=680');
+  if (!w) { toast('Fenêtre de connexion bloquée', true); return; }
+  driveWaitCode(state).then(r => driveFinishConnect(r, pk.verifier)).catch(e => { DRIVE.msg = e.message; driveRender(); });
+}
+function driveWaitCode(state) {
+  return new Promise((resolve, reject) => {
+    const t0 = Date.now(); let done = false;
+    const finish = r => { if (done || !r || r.state !== state) return; done = true; clearInterval(iv); window.removeEventListener('message', onMsg); try { localStorage.removeItem(DRIVE_RESULT); localStorage.removeItem(DRIVE_PENDING); } catch (e) { /* rien */ } if (r.error || !r.code) reject(new Error('Connexion à Google annulée')); else resolve(r); };
+    const onMsg = e => { if (e.origin === location.origin && e.data && e.data.type === 'japon-oauth') finish(e.data); };
+    window.addEventListener('message', onMsg);
+    const iv = setInterval(() => { let r = null; try { r = JSON.parse(localStorage.getItem(DRIVE_RESULT) || 'null'); } catch (e) { /* rien */ } if (r) finish(r); else if (Date.now() - t0 > 300000) { done = true; clearInterval(iv); window.removeEventListener('message', onMsg); reject(new Error('Connexion à Google trop longue : recommencez')); } }, 400);
+  });
+}
+async function driveTokenCall(params) {
+  let r; try { r = await fetch(DRIVE_FN, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(params) }); }
+  catch (e) { throw Object.assign(new Error(navigator.onLine ? 'Google injoignable' : 'Pas de réseau'), { code: 'net' }); }
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) { const e = new Error(j.error === 'invalid_grant' ? 'Accès Google expiré ou retiré : reconnectez-vous' : 'Refus de Google (' + (j.error || r.status) + ')'); e.code = j.error === 'invalid_grant' ? 'reauth' : 'google'; throw e; }
+  return j;
+}
+async function driveFinishConnect(r, verifier) {
+  DRIVE.msg = 'Connexion à Google…'; driveRender();
+  const j = await driveTokenCall({ grant_type: 'authorization_code', code: r.code, redirect_uri: driveRedirect(), code_verifier: verifier });
+  if (!j.refresh_token) throw new Error('Google n’a pas donné d’accès durable : recommencez');
+  await setDrv('driveAuth', { refresh: j.refresh_token, at: Date.now() });
+  DRIVE.access = { token: j.access_token, exp: Date.now() + (j.expires_in || 3600) * 1000 };
+  DRIVE.msg = 'Recherche d’une copie sur le Drive…'; driveRender();
+  let error = ''; try { DRIVE.hasRemote = !!(await driveFind()); } catch (e) { error = e.message; }
+  await setDS({ needAuth: false, error }); DRIVE.msg = ''; driveRender();
+}
+async function driveToken() {
+  if (DRIVE.access && DRIVE.access.exp > Date.now() + 60000) return DRIVE.access.token;
+  if (!DRV.driveAuth || !DRV.driveAuth.refresh) throw Object.assign(new Error('Pas connecté à Google'), { code: 'reauth' });
+  const j = await driveTokenCall({ grant_type: 'refresh_token', refresh_token: DRV.driveAuth.refresh });
+  DRIVE.access = { token: j.access_token, exp: Date.now() + (j.expires_in || 3600) * 1000 }; return DRIVE.access.token;
+}
+// Fichiers du dossier caché
+async function driveFetch(path, opt) {
+  opt = opt || {}; const tok = await driveToken(); let r;
+  try { r = await fetch(DRIVE_API + path, Object.assign({}, opt, { headers: Object.assign({}, opt.headers || {}, { Authorization: 'Bearer ' + tok }) })); }
+  catch (e) { throw Object.assign(new Error(navigator.onLine ? 'Google Drive injoignable' : 'Pas de réseau'), { code: 'net' }); }
+  if (r.status === 401) { DRIVE.access = null; throw Object.assign(new Error('Accès Google à renouveler'), { code: 'retry' }); }
+  if (!r.ok) { const j = await r.json().catch(() => ({})); throw Object.assign(new Error('Google Drive : ' + ((j.error && j.error.message) || r.status)), { code: 'drive' }); }
+  return r;
+}
+async function driveFind() {
+  const q = encodeURIComponent(`name='${DRIVE_NAME}' and trashed=false`);
+  const j = await (await driveFetch(`/drive/v3/files?spaces=appDataFolder&q=${q}&fields=files(id,version,modifiedTime)&orderBy=modifiedTime desc`)).json();
+  return (j.files || [])[0] || null;
+}
+async function driveListPj() {
+  const out = new Map(); let token = '';
+  for (let n = 0; n < 20; n++) {
+    const q = encodeURIComponent("name contains 'pj-' and trashed=false");
+    const j = await (await driveFetch(`/drive/v3/files?spaces=appDataFolder&q=${q}&fields=nextPageToken,files(id,name)&pageSize=200${token ? '&pageToken=' + encodeURIComponent(token) : ''}`)).json();
+    for (const f of (j.files || [])) out.set(f.name, f.id);
+    if (!j.nextPageToken) break; token = j.nextPageToken;
+  }
+  return out;
+}
+const driveMeta = async id => (await driveFetch(`/drive/v3/files/${id}?fields=id,version,modifiedTime`)).json();
+const driveDownload = async id => (await driveFetch(`/drive/v3/files/${id}?alt=media`)).text();
+async function driveUpload(id, text, name) {
+  if (id) return (await driveFetch(`/upload/drive/v3/files/${id}?uploadType=media&fields=id,version`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: text })).json();
+  const b = 'japon' + b64u(rand(9));
+  const body = `--${b}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify({ name: name || DRIVE_NAME, parents: ['appDataFolder'] })}\r\n--${b}\r\nContent-Type: application/json\r\n\r\n${text}\r\n--${b}--`;
+  return (await driveFetch('/upload/drive/v3/files?uploadType=multipart&fields=id,version', { method: 'POST', headers: { 'Content-Type': 'multipart/related; boundary=' + b }, body })).json();
+}
+// Contenu envoyé : tout, sauf le contenu des pièces jointes (fichiers pj-<id> à part, envoyés une seule fois).
+function buildSyncPayload() {
+  const p = buildPayload(true);
+  p.data.billets = p.data.billets.map(b => (b.fichiers || []).length ? Object.assign({}, b, { fichiers: b.fichiers.map(f => { const c = Object.assign({}, f); delete c.data; return c; }) }) : b);
+  return p;
+}
+// Empreinte : fiches (identifiant + date de modification) et réglages ; égale des deux côtés = rien à envoyer.
+async function syncFp(p) {
+  const lines = []; for (const s of DATA_STORES) for (const r of (p.data[s] || [])) lines.push(s + ':' + r.id + ':' + (r.updatedAt || '') + ':' + (r.deleted ? 1 : 0));
+  lines.push('set:' + ((p.settings && p.settings.updatedAt) || '')); lines.sort();
+  return b64(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(lines.join('\n'))))).slice(0, 24) + ':' + lines.length;
+}
+function driveLocalChange() { if (!driveReady() || DRIVE.applying) return; clearTimeout(DRIVE.timer); DRIVE.timer = setTimeout(() => driveSync('modification'), window.__driveDelay || 3000); }
+async function driveSync(reason, retried) {
+  if (!driveReady()) return null;
+  if (DRIVE.busy) { DRIVE.again = true; return null; }
+  if (!navigator.onLine) { await setDS({ offline: true }); driveRender(); return null; }
+  DRIVE.busy = true; driveRender(); const out = { received: 0, sent: false, pj: 0 }; let ok = false;
+  try {
+    for (let attempt = 0; attempt < 4; attempt++) {
+      const st = DS(); const file = await driveFind(); let remoteFp = st.remoteFp;
+      if (file && file.version !== st.remoteVersion) {
+        const remote = validatePayload(await driveDecrypt(await driveDownload(file.id), unb64(DRV.driveKey.raw)));
+        const mp = mergePlan(remote);
+        if (mp.nAdd || mp.nUpd || mp.set) {
+          if (DATA_STORES.some(k => S[k].length) && Date.now() - (st.lastBackup || 0) > 12 * 3600e3) { await createBackup('Avant synchronisation Google Drive'); await setDS({ lastBackup: Date.now() }); }
+          DRIVE.applying = true; try { await applyPlan(mp); } finally { DRIVE.applying = false; }
+          out.received += mp.nAdd + mp.nUpd + (mp.set ? 1 : 0);
+        }
+        remoteFp = await syncFp(remote);
+        await setDS({ remoteVersion: file.version, remoteFp, fileId: file.id, lastFrom: remote.appareil || '', lastFromAt: remote.exportedAt || '' });
+      }
+      const local = buildSyncPayload(), localFp = await syncFp(local);
+      if (file && localFp === remoteFp) { ok = true; break; }
+      if (file) { const m = await driveMeta(file.id); if (m.version !== DS().remoteVersion) continue; } // l'autre téléphone vient d'écrire : on relit
+      const up = await driveUpload(file && file.id, await driveEncrypt(local));
+      await setDS({ remoteVersion: up.version, remoteFp: localFp, fileId: up.id }); out.sent = true; ok = true; break;
+    }
+    if (!ok) throw new Error('Le Drive change sur l’autre téléphone : réessai dans un instant');
+    out.pj = await drivePj();
+    await setDS({ lastSync: Date.now(), offline: false, error: '', needAuth: false });
+    if (out.received || out.pj) driveAfterReceive(out);
+  } catch (e) {
+    if (e.code === 'retry' && !retried) { DRIVE.busy = false; return driveSync(reason, true); }
+    if (e.code === 'pass') await setDrv('driveKey', null); // phrase changée sur l'autre téléphone : on la redemande ici
+    await setDS({ error: e.message, needAuth: e.code === 'reauth', offline: e.code === 'net' && !navigator.onLine });
+  } finally { DRIVE.busy = false; driveRender(); if (DRIVE.again) { DRIVE.again = false; setTimeout(() => driveSync('suite'), 800); } }
+  return out;
+}
+// Pièces jointes : on envoie celles d'ici pas encore sur le Drive, on récupère celles qui manquent ici.
+async function drivePj() {
+  const up = new Set(DS().pjUp || []), aEnvoyer = [], manquent = [];
+  for (const b of live('billets')) for (const f of (b.fichiers || [])) { if (f.data) { if (!up.has(f.id)) aEnvoyer.push(f); } else manquent.push([b.id, f.id]); }
+  if (!aEnvoyer.length && !manquent.length) return 0;
+  const remote = await driveListPj(); let recus = 0;
+  for (const f of aEnvoyer) { if (!remote.has('pj-' + f.id)) await driveUpload(null, await driveEncrypt({ id: f.id, data: f.data }), 'pj-' + f.id); up.add(f.id); }
+  if (aEnvoyer.length) await setDS({ pjUp: [...up] });
+  for (const [bid, fid] of manquent) {
+    const id = remote.get('pj-' + fid); if (!id) continue;
+    const o = await driveDecrypt(await driveDownload(id), unb64(DRV.driveKey.raw)); if (!o || !DATA_URL_RE.test(String(o.data || ''))) continue;
+    const b = byId('billets', bid), f = b && (b.fichiers || []).find(x => x.id === fid); if (!f || f.data) continue;
+    f.data = o.data; await putMany('billets', [JSON.parse(JSON.stringify(b))]); // sans changer la date : rien à renvoyer
+    up.add(fid); recus++;
+  }
+  if (recus) await setDS({ pjUp: [...up] });
+  return recus;
+}
+// L'écran n'est redessiné que hors saisie ; sinon un message prévient.
+function driveAfterReceive(out) {
+  const typing = document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName);
+  toast('Mises à jour reçues de l’autre téléphone' + (typing ? ' (visibles en changeant d’écran)' : ''));
+  if (!typing) render();
+}
+function driveInit() {
+  driveProbe();
+  if (driveReady()) setTimeout(() => driveSync('ouverture'), 800);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && driveReady() && Date.now() - (DS().lastSync || 0) > 5000) driveSync('retour'); });
+  window.addEventListener('online', () => { if (driveReady()) driveSync('réseau'); });
+  setInterval(() => { if (document.visibilityState === 'visible' && driveReady() && Date.now() - (DS().lastSync || 0) > 25000) driveSync('régulier'); }, 10000);
+}
+function driveWhen(t) { if (!t) return 'jamais'; const m = Math.round((Date.now() - t) / 60000); return m < 1 ? 'à l’instant' : m < 60 ? 'il y a ' + m + ' min' : new Date(t).toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }); }
+function driveCardHtml() {
+  const st = DS(); let body;
+  if (!DRV.driveAuth) {
+    body = `<p class="muted">Vos deux téléphones partagent automatiquement les idées, l’itinéraire, les réservations, les billets et le budget. Les données sont chiffrées avant d’aller sur le Drive.</p>
+<p class="hint"><b>Important :</b> connectez-vous avec le <b>même compte Google</b> sur les deux téléphones. L’appli ne voit qu’un dossier caché à elle, rien d’autre dans le Drive.</p>
+${DRIVE.cfg === null ? '<p class="hint">Vérification de la connexion Google…</p>' : DRIVE.cfg === false ? '<p class="hint" style="color:var(--shu)">Connexion Google à finaliser dans Netlify (identifiant et code secret de l’appli Google).</p>' : ''}
+<button class="btn prim full" style="margin-top:10px" data-act="drv-connect" ${DRIVE.cfg ? '' : 'disabled'}>Se connecter avec Google</button>`;
+  } else if (!DRV.driveKey && DRIVE.hasRemote === undefined && DRIVE.msg) {
+    body = '<p class="muted">Connecté à Google.</p>';
+  } else if (!DRV.driveKey) {
+    const neuve = DRIVE.hasRemote === false;
+    body = `<p class="muted">Connecté à Google. Dernière étape sur ce téléphone : la phrase secrète qui chiffre vos données.</p>
+<p class="hint">${neuve ? 'Choisissez-la (16 caractères au moins, par exemple quatre mots) et notez-la : elle sera demandée une fois sur l’autre téléphone.' : 'Tapez la même phrase que sur l’autre téléphone.'}</p>
+<label class="f">Phrase secrète</label><input id="drvPass" type="password" autocomplete="new-password">${neuve ? '<label class="f">La même, une seconde fois</label><input id="drvPass2" type="password" autocomplete="new-password">' : ''}
+<div class="row" style="margin-top:10px"><button class="btn prim" data-act="drv-pass">Valider</button><button class="btn ghost" data-act="drv-off">Annuler</button></div>`;
+  } else {
+    body = `<p class="muted" style="margin:0">${DRIVE.busy ? 'Synchronisation en cours…' : 'Synchronisé ' + esc(driveWhen(st.lastSync))}${st.lastFrom ? ' · dernières nouvelles de : ' + esc(st.lastFrom) : ''}</p>
+${st.error ? `<p class="hint" style="color:var(--shu)">${esc(st.error)}</p>` : ''}
+<div class="row" style="margin-top:10px">${st.needAuth ? '<button class="btn prim" data-act="drv-connect">Se reconnecter à Google</button>' : ''}<button class="btn" data-act="drv-now">Synchroniser maintenant</button><button class="btn ghost" data-act="drv-off">Arrêter sur ce téléphone</button></div>`;
+  }
+  return `<div class="card info" id="drive-card"><h2>Synchronisation Google Drive</h2>${DRIVE.msg ? `<p class="hint">${esc(DRIVE.msg)}</p>` : ''}${body}</div>`;
+}
+function driveRender() { const el = document.getElementById('drive-card'); if (el) el.outerHTML = driveCardHtml(); if ($('[data-act="drv-connect"]') && !DRIVE.pkce) drivePreparePkce(); const n = $('#nav'); if (n && db) n.innerHTML = navHTML(location.hash); }
+async function drivePass() {
+  const p = ($('#drvPass') || {}).value || '', p2 = $('#drvPass2');
+  if (p2 && p.length < 16) { toast('16 caractères au moins', true); return; }
+  if (p2 && p !== p2.value) { toast('Les deux phrases sont différentes', true); return; }
+  if (!p) { toast('Tapez la phrase secrète', true); return; }
+  DRIVE.msg = 'Préparation de la clé…'; driveRender();
+  try {
+    const f = await driveFind(); let salt, iter = DRIVE_ITER;
+    if (f) { const txt = await driveDownload(f.id), h = JSON.parse(txt); salt = unb64(h.salt); iter = h.iter || DRIVE_ITER; const raw = await deriveRaw(p, salt, iter); await driveDecrypt(txt, raw); await setDrv('driveKey', { raw: b64(raw), salt: h.salt, iter }); }
+    else { if (!p2) { DRIVE.hasRemote = false; DRIVE.msg = ''; driveRender(); return; } salt = rand(16); const raw = await deriveRaw(p, salt, iter); await setDrv('driveKey', { raw: b64(raw), salt: b64(salt), iter }); }
+    DRIVE.msg = ''; await setDS({ remoteVersion: null, remoteFp: null, error: '', pjUp: [] }); driveRender();
+    const r = await driveSync('première'); toast(r && r.received ? 'Synchronisation en place : données réunies' : 'Synchronisation en place');
+  } catch (e) { DRIVE.msg = e.code === 'pass' ? 'Phrase secrète différente de celle de l’autre téléphone.' : e.message; driveRender(); }
+}
+async function driveOff() {
+  if (!confirm('Arrêter la synchronisation sur ce téléphone ? Vos données restent ici et sur le Drive ; vous pourrez la remettre en vous reconnectant.')) return;
+  const a = DRV.driveAuth; if (a && a.refresh) fetch('https://oauth2.googleapis.com/revoke', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'token=' + encodeURIComponent(a.refresh) }).catch(() => {});
+  DRIVE.access = null; DRIVE.hasRemote = undefined; DRIVE.msg = '';
+  await setDrv('driveAuth', null); await setDrv('driveKey', null); await setDrv('driveState', null); driveRender();
+}
 
 /* ---------- Agenda (.ics) ---------- */
 function icsEsc(s) { return String(s || '').replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n'); }
@@ -740,7 +997,9 @@ function vBillet(id) {
 <label class="f">Référence / numéro</label><input data-f="reference" value="${esc(b.reference || '')}">
 <label class="f">Notes</label><textarea data-f="note">${esc(b.note || '')}</textarea></div>
 <div class="card"><h2>Pièces jointes</h2>${b.fichiersOmis && !fs.length ? '<p class="muted">Les pièces jointes sont restées sur l’autre téléphone (envoi sans billets).</p>' : ''}
-<div class="thumbs">${fs.map(f => f.type === 'application/pdf'
+<div class="thumbs">${fs.map(f => !f.data
+    ? `<div class="th"><div style="font-size:26px">⏳</div><div>${esc(f.nom || 'Pièce jointe')}</div><div class="s">${driveReady() ? 'arrive du Drive…' : 'sur l’autre téléphone'}</div></div>`
+    : f.type === 'application/pdf'
     ? `<div class="th"><div style="font-size:28px">📄</div><div style="overflow-wrap:anywhere">${esc(f.nom || 'PDF')}</div><a class="btn small" style="margin-top:4px" href="${esc(blobUrl(f))}" target="_blank" rel="noopener">Ouvrir</a><button class="x" data-act="fichier-del" data-id="${b.id}" data-fid="${f.id}" aria-label="Retirer">×</button></div>`
     : `<div class="th"><a href="#/voir/${b.id}/${f.id}" style="display:block;width:100%;height:100%"><img src="${esc(f.data)}" alt=""></a><button class="x" data-act="fichier-del" data-id="${b.id}" data-fid="${f.id}" aria-label="Retirer">×</button></div>`).join('')}</div>
 <label class="btn file-btn" style="margin-top:10px">📎 Ajouter une photo ou un PDF<input type="file" accept="image/*,application/pdf" multiple data-change="fichiers" data-id="${b.id}"></label></div>
@@ -748,7 +1007,7 @@ function vBillet(id) {
 }
 function vVoir(bid, fid) {
   const b = byId('billets', bid); const f = b && (b.fichiers || []).find(x => x.id === fid);
-  if (!f) return notFound('#/billets');
+  if (!f || !f.data) return notFound('#/billets');
   H(b.titre || 'Billet', { back: '#/billet/' + bid });
   return `<div class="overlay"><img src="${esc(f.data)}" alt="${esc(f.nom || '')}"><a class="btn fermer" href="#/billet/${bid}">Fermer</a><p class="muted" style="margin-top:10px">Pensez à monter la luminosité pour un QR code.</p></div>`;
 }
@@ -813,7 +1072,7 @@ function vPlus() {
   H('Plus');
   const v = isVoyage();
   const links = (v ? [['#/idees', 'Idées à voir', 'Les liens de la préparation'], ['#/rappels', 'Réservations', 'Ce qui se réserve à l’avance']] : [['#/budget', 'Budget et convertisseur', 'Dépenses en yens, total en euros']])
-    .concat([['#/echange', 'Échanger avec l’autre téléphone', 'Envoyer ou recevoir les mises à jour'], ['#/sauvegardes', 'Sauvegardes', 'Copies automatiques, fichier de sauvegarde'], ['#/reglages', 'Réglages', 'Dates, prénoms, mode voyage']]);
+    .concat([['#/reglages', 'Synchronisation Google Drive', driveReady() ? (DS().error ? '⚠️ ' + DS().error : 'Active · ' + driveWhen(DS().lastSync)) : 'Pas encore activée'], ['#/echange', 'Échanger par fichier', 'Sans Google Drive : envoyer ou recevoir un fichier'], ['#/sauvegardes', 'Sauvegardes', 'Copies automatiques, fichier de sauvegarde'], ['#/reglages', 'Réglages', 'Dates, prénoms, mode voyage']]);
   return `<div class="card">${links.map(([h, t, s]) => `<a class="item lien-plein" href="${h}"><div class="corps"><div class="t">${t}</div><div class="s">${s}</div></div><span class="muted">›</span></a>`).join('')}</div>
 <div class="card"><div class="s">Version ${APP_VERSION}</div><button class="btn small" style="margin-top:8px" data-act="maj-check">Rechercher une mise à jour</button></div>`;
 }
@@ -848,7 +1107,7 @@ function vReglages() {
   H('Réglages', { back: '#/plus' });
   const vs = (SET.voyageurs || []).slice(); while (vs.length < 2) vs.push('');
   const bad = validYmd(SET.debut) && validYmd(SET.fin) && SET.fin < SET.debut;
-  return `<div class="card"><h2>Séjour au Japon</h2><p class="muted">Premier et dernier jour sur place. Modifiables à tout moment : les étapes ne sont jamais perdues.</p>
+  return `${driveCardHtml()}<div class="card"><h2>Séjour au Japon</h2><p class="muted">Premier et dernier jour sur place. Modifiables à tout moment : les étapes ne sont jamais perdues.</p>
 <div class="row" style="align-items:flex-start"><div style="flex:1;min-width:140px"><label class="f">Premier jour</label><input type="date" data-set="debut" value="${esc(SET.debut || '')}"></div><div style="flex:1;min-width:140px"><label class="f">Dernier jour</label><input type="date" data-set="fin" value="${esc(SET.fin || '')}"></div></div>${bad ? '<p class="hint" style="color:var(--shu)">Le dernier jour est avant le premier.</p>' : ''}</div>
 <div class="card"><h2>Voyageurs</h2>${vs.map((v, k) => `<label class="f">Prénom ${k + 1}</label><input data-set="voyageur" data-idx="${k}" value="${esc(v)}" autocomplete="off">`).join('')}</div>
 <div class="card"><h2>Budget</h2><label class="f" style="margin-top:0">Budget prévu sur place (€)</label><input data-set="budgetPrevu" inputmode="decimal" value="${SET.budgetPrevu ? esc(String(SET.budgetPrevu).replace('.', ',')) : ''}"></div>
@@ -904,6 +1163,7 @@ function render() {
   afterRender();
 }
 function afterRender() {
+  if ($('[data-act="drv-connect"]') && !DRIVE.pkce) drivePreparePkce(); // prêt avant le toucher (la fenêtre doit s'ouvrir dans le geste)
   const cy = $('#convY'), ce = $('#convE');
   if (cy && ce) {
     cy.addEventListener('input', () => { const n = parseNum(cy.value); ce.value = SET.taux && cy.value !== '' && isFinite(n) ? (Math.round(n / SET.taux * 100) / 100).toLocaleString('fr-FR') : ''; });
@@ -1036,8 +1296,12 @@ const ACTS = {
     const t = db.transaction([...DATA_STORES, 'meta'], 'readwrite');
     for (const s of DATA_STORES) { const os = t.objectStore(s); os.clear(); for (const r of (b.payload.data[s] || [])) os.put(r); }
     t.objectStore('meta').put(Object.assign({}, SET, pickShared(b.payload.settings || {}), { id: 'settings' }));
-    try { await txDone(t); await reloadAll(); render(); toast('Copie restaurée'); } catch (e) { toast('Restauration impossible : ' + e.message, true); }
+    try { await txDone(t); await reloadAll(); driveLocalChange(); render(); toast('Copie restaurée'); } catch (e) { toast('Restauration impossible : ' + e.message, true); }
   },
+  'drv-connect': () => driveConnect(),
+  'drv-pass': () => drivePass(),
+  'drv-now': () => driveSync('manuel'),
+  'drv-off': () => driveOff(),
   async persist() { try { const ok = navigator.storage && navigator.storage.persist && await navigator.storage.persist(); toast(ok ? 'Données protégées' : 'Protection refusée par le navigateur'); render(); } catch (e) { toast('Indisponible', true); } },
   maj: () => { if (SW.waiting) SW.waiting.postMessage('skipWaiting'); else location.reload(); },
   async 'maj-check'() { if (!SW.reg) { toast('Mise à jour indisponible ici'); return; } try { await SW.reg.update(); if (!SW.reg.waiting && !SW.reg.installing) toast('Vous avez la dernière version'); } catch (e) { toast('Pas de réseau', true); } }
@@ -1126,6 +1390,7 @@ function registerSW() {
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && SW.reg) SW.reg.update().catch(() => {}); });
 }
 async function start() {
+  if (driveOauthCallback()) return; // fenêtre de connexion Google qui revient : elle se ferme seule
   try { LOC = JSON.parse(localStorage.getItem(LOCAL_KEY) || '{}') || {}; } catch (e) { LOC = {}; }
   try { db = await openDB(); await reloadAll(); }
   catch (e) { view.innerHTML = `<div class="card alerte"><h2>Stockage indisponible</h2><p class="muted">${esc(e && e.message || e)}. En navigation privée, l’appli ne peut rien garder.</p></div>`; return; }
@@ -1133,7 +1398,7 @@ async function start() {
   const q = new URLSearchParams(location.search);
   if (q.has('lien') || q.has('texte') || q.has('titre')) { RECU = { titre: q.get('titre') || '', texte: q.get('texte') || '', lien: q.get('lien') || '' }; history.replaceState(null, '', location.pathname + '#/recu'); }
   if (navigator.storage && navigator.storage.persisted) navigator.storage.persisted().then(p => { if (!p && navigator.storage.persist) navigator.storage.persist().catch(() => {}); }).catch(() => {});
-  render(); registerSW();
+  render(); registerSW(); driveInit();
 }
 start();
 </script>

@@ -2,7 +2,7 @@ name: Contrôles Japon 2027
 on:
   push:
     branches: [main]
-    paths: ['app/**', 'tests/**', '.github/workflows/**']
+    paths: ['app/**', 'netlify/**', 'tests/**', '.github/workflows/**']
   pull_request:
     paths: ['app/**', 'tests/**']
   workflow_dispatch:
@@ -27,3 +27,8 @@ jobs:
         run: |
           node tests/test_app.cjs
           CARD_BROWSER=webkit node tests/test_app.cjs
+      - name: Synchronisation Google Drive (Google simulé, deux téléphones)
+        run: |
+          node --check netlify/functions/google-oauth.mjs
+          node tests/test_sync.cjs
+          CARD_BROWSER=webkit node tests/test_sync.cjs

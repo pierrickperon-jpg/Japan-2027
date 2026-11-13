@@ -77,8 +77,20 @@ Règles relevées le 13 novembre 2026 (site officiel Ghibli ; guides concordants
 - `importExchange` futur : accepter tous les formats précédents ; un fichier d'une version plus récente est refusé avec le conseil de mettre l'appli à jour.
 - Sauvegardes : `#/sauvegardes` (fichier complet, copies automatiques, restauration après copie de l'état actuel).
 
+## Synchronisation Google Drive (lot 4, demande de Pierrick du 13 novembre 2026)
+
+- Même principe que CRM Terrain : données chiffrées sur le téléphone (AES-GCM, clé PBKDF2-SHA256 310 000 tours tirée d'une phrase secrète de 16 caractères au moins), rangées dans le dossier caché de l'appli (`appDataFolder`, autorisation `drive.appdata`, non sensible). **Les deux téléphones se connectent au même compte Google** et tapent la même phrase.
+- Fichier principal `japon-2027-sync.json` = `buildSyncPayload()` (tout, fiches supprimées comprises, sauf le **contenu** des pièces jointes) ; chaque pièce jointe est un fichier chiffré à part `pj-<id du fichier>`, envoyé une fois (`DS().pjUp`) et récupéré quand il manque (`drivePj`, écriture sans changer `updatedAt`). Une pièce sans `data` est affichée « arrive du Drive… » ; `mergeFichiers` garde toujours la version qui a le contenu.
+- Fusion : `mergePlan` / `applyPlan` (la fiche la plus récente l'emporte). Empreinte `syncFp` (identifiant + `updatedAt` + supprimée, réglages) : égale des deux côtés = rien à envoyer. Avant d'envoyer, on vérifie que la version du Drive n'a pas bougé (sinon relecture, 4 essais). Copie de sécurité locale avant une fusion reçue, au plus toutes les 12 h.
+- Déclencheurs : ouverture, retour dans l'appli, retour du réseau, 3 s après une écriture (`persist` → `driveLocalChange`, aussi après import, décalage, restauration), toutes les 25 s environ quand l'appli est à l'écran. Écran redessiné seulement hors saisie.
+- Connexion : fenêtre Google ouverte dans le toucher (PKCE préparé avant, `drivePreparePkce`), retour sur `/?code=&state=` traité au tout début de `start()` (`driveOauthCallback`). Le **code secret** de l'appli Google n'est jamais dans le navigateur : fonction Netlify `netlify/functions/google-oauth.mjs` (`/api/google-oauth` : GET → `{ready, clientId}`, POST → échange du code ou du jeton durable), variables Netlify `GOOGLE_OAUTH_CLIENT_ID` et `GOOGLE_OAUTH_CLIENT_SECRET`.
+- Restent sur le téléphone seulement (magasin `meta`, jamais dans le fichier d'échange) : `driveAuth` (jeton durable), `driveKey` (clé), `driveState` (état). « Arrêter sur ce téléphone » révoque le jeton et efface ces trois fiches, pas les données.
+- Réglage : carte « Synchronisation Google Drive » en tête de `#/reglages` ; état résumé dans « Plus ». L'échange par fichier reste possible (sans Drive).
+- Test : `tests/test_sync.cjs` (Google simulé, trois téléphones : A crée, B rejoint, C se trompe de phrase).
+
 ## Tests
 
+- `node tests/test_sync.cjs` (et `CARD_BROWSER=webkit`) : synchronisation Google Drive avec un Google simulé.
 - `node tests/check_static.cjs` : syntaxe, versions identiques, pas d'assertion arrière, manifeste et fichiers du cache présents, aucun fichier de données dans `app/`.
 - `node tests/test_app.cjs` (Chromium, profil iPhone puis Android) et `CARD_BROWSER=webkit node tests/test_app.cjs` (WebKit, comme Safari) : parcours complet avec données fictives (réglages, idées, tri, étapes, taxi, réservations et dates calculées, budget, billet avec image, mode voyage, échange dans les deux sens, partage Android, sauvegarde, fichier refusé). Lancés par GitHub Actions à chaque envoi sur `main`.
 - Sous automate (`navigator.webdriver`), l'export télécharge au lieu d'ouvrir la feuille de partage.

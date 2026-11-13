@@ -11,7 +11,7 @@ Petite appli pour préparer puis vivre le voyage au Japon, sur iPhone et Android
 - **Budget** : dépenses en yens, convertisseur, total en euros.
 - **Mode voyage** : la journée du jour, les billets et le budget, automatiquement pendant le séjour.
 
-**Toutes les données restent sur les téléphones** (stockage du navigateur). Le site ne contient que l'appli vide. L'échange entre les deux téléphones se fait par un fichier envoyé par WhatsApp, Messages ou mail (Plus › Échanger).
+**Toutes les données restent sur les téléphones** (stockage du navigateur). Le site ne contient que l'appli vide. Les deux téléphones se synchronisent par le Google Drive (copie chiffrée dans le dossier caché de l'appli, même compte Google sur les deux téléphones), ou par un fichier envoyé par WhatsApp, Messages ou mail (Plus › Échanger par fichier).
 
 ## Contenu
 
@@ -21,6 +21,7 @@ Petite appli pour préparer puis vivre le voyage au Japon, sur iPhone et Android
 | `app/service-worker.js` | Mise en cache pour le hors connexion |
 | `app/manifest.webmanifest`, `app/icon-*.png` | Installation sur l'écran d'accueil, menu Partager d'Android |
 | `netlify.toml` | Publication Netlify : seul le dossier `app` est mis en ligne |
+| `netlify/functions/google-oauth.mjs` | Connexion Google : garde le code secret de l'appli Google côté Netlify |
 | `tests/` | Contrôles et parcours complet avec données fictives |
 | `tools/icons.py` | Fabrique les icônes |
 
@@ -28,6 +29,11 @@ Petite appli pour préparer puis vivre le voyage au Japon, sur iPhone et Android
 
 - **iPhone** : ouvrir le lien dans Safari, bouton Partager › « Sur l'écran d'accueil ». Ouvrir ensuite l'appli depuis son icône (elle ne voit pas ce qui a été saisi dans Safari).
 - **Android** : ouvrir le lien dans Chrome, menu ⋮ › « Installer l'application ». L'appli apparaît alors dans le menu Partager de TikTok et Facebook.
+
+## Connexion Google (une seule fois)
+
+1. Google Cloud › Google Auth Platform › Clients › Créer un client « Application Web » : origine `https://japan-27.netlify.app`, URI de redirection `https://japan-27.netlify.app/`.
+2. Netlify › projet `japan-27` › Project configuration › Environment variables : `GOOGLE_OAUTH_CLIENT_ID` et `GOOGLE_OAUTH_CLIENT_SECRET` (secret, portée Functions), puis republier.
 
 ## Publier une mise à jour
 

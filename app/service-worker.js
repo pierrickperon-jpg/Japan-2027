@@ -1,6 +1,6 @@
 /* Japon 2027 : seule l'appli vide est mise en cache, jamais les données (elles restent dans IndexedDB). */
 /* À chaque version : changer VERSION ici ET APP_VERSION dans index.html (le test vérifie qu'elles sont égales). */
-const VERSION = '2026.11.13-4';
+const VERSION = '2026.11.13-5';
 const CACHE = 'japon-2027-' + VERSION;
 const FILES = ['./', 'index.html', 'manifest.webmanifest', 'icon-180.png', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png'];
 

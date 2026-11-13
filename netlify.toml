@@ -1,9 +1,13 @@
 # Publication Netlify : seul le dossier app (l'appli vide, sans aucune donnée) est mis en ligne.
+[functions]
+  # Connexion Google (garde le code secret côté Netlify) : /api/google-oauth
+  directory = "netlify/functions"
+
 [build]
   publish = "app"
   command = ""
   # Pas de republication (ni de crédits) si l'envoi ne touche ni l'appli ni ce fichier. Premier déploiement : toujours publié.
-  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- app/ netlify.toml"
+  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- app/ netlify/ netlify.toml"
 
 # Le service worker et la page doivent toujours être revérifiés pour que les mises à jour arrivent sur les téléphones.
 [[headers]]
@@ -21,10 +25,10 @@
   [headers.values]
     Cache-Control = "no-cache"
 
-# Appli personnelle : pas dans les moteurs de recherche. Seuls TikTok/YouTube (titre et image d'une vidéo) et Frankfurter (taux) sont appelés, sur un toucher.
+# Appli personnelle : pas dans les moteurs de recherche. Appels extérieurs : Google Drive (synchro chiffrée), TikTok/YouTube (titre et image d'une vidéo), Frankfurter (taux).
 [[headers]]
   for = "/*"
   [headers.values]
     X-Robots-Tag = "noindex, nofollow"
     Referrer-Policy = "no-referrer"
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://www.tiktok.com https://www.youtube.com https://i.ytimg.com https://*.tiktokcdn.com https://*.tiktokcdn-us.com https://*.tiktokcdn-eu.com https://*.ibyteimg.com https://api.frankfurter.dev https://api.frankfurter.app; object-src 'self' blob: data:; frame-src 'self' blob: data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://www.googleapis.com https://oauth2.googleapis.com https://www.tiktok.com https://www.youtube.com https://i.ytimg.com https://*.tiktokcdn.com https://*.tiktokcdn-us.com https://*.tiktokcdn-eu.com https://*.ibyteimg.com https://api.frankfurter.dev https://api.frankfurter.app; object-src 'self' blob: data:; frame-src 'self' blob: data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
