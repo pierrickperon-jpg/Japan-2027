@@ -1,0 +1,29 @@
+name: Contrôles Japon 2027
+on:
+  push:
+    branches: [main]
+    paths: ['app/**', 'tests/**', '.github/workflows/**']
+  pull_request:
+    paths: ['app/**', 'tests/**']
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Contrôles statiques (syntaxe, versions, pièges iPhone)
+        run: node tests/check_static.cjs
+      - name: Installer les navigateurs de test
+        run: |
+          npm install --no-save --no-audit --no-fund playwright@1.56.1
+          npx playwright install --with-deps chromium webkit
+      - name: Parcours complet (Chromium = Android, WebKit = iPhone)
+        run: |
+          node tests/test_app.cjs
+          CARD_BROWSER=webkit node tests/test_app.cjs

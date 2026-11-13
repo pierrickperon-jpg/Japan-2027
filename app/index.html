@@ -1,0 +1,1048 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="japon-app" content="v1">
+<title>Japon 2027</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Japon 2027">
+<meta name="theme-color" content="#F6F1E7">
+<style>
+:root{--fond:#F6F1E7;--carte:#FFFDF8;--encre:#23262C;--doux:#6E6A62;--trait:#E3DACB;--shu:#C8432B;--shu-pale:#F6DED8;--ai:#25405F;--ai-pale:#E2E8F0;--matcha:#5C7838;--matcha-pale:#E5ECD9;--ambre:#A86A12;--ambre-pale:#F6E7CC;--r:14px;--sb:env(safe-area-inset-bottom,0px);--st:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--fond);color:var(--encre);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Hiragino Sans","Noto Sans JP",sans-serif;padding-bottom:calc(76px + var(--sb))}
+a{color:var(--ai)}
+header#top{position:sticky;top:0;z-index:5;background:rgba(246,241,231,.95);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);padding:calc(10px + var(--st)) 14px 10px;border-bottom:1px solid var(--trait);display:flex;align-items:center;gap:10px}
+#back{border:0;background:transparent;font:inherit;font-size:28px;line-height:1;color:var(--ai);padding:0 6px 0 0;cursor:pointer}
+.tw{flex:1;min-width:0}
+#eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--shu);font-weight:700}
+h1{font-size:21px;margin:0;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+h1::before{content:"";display:inline-block;width:11px;height:11px;border-radius:50%;background:var(--shu);margin-right:9px;vertical-align:2px}
+main#view{padding:14px 14px 24px;max-width:720px;margin:0 auto}
+.card{display:block;background:var(--carte);border:1px solid var(--trait);border-radius:var(--r);padding:14px;margin:0 0 12px;color:inherit}
+.card h2{font-size:16px;margin:0 0 8px}
+.alerte{border-left:4px solid var(--shu)}
+.info{border-left:4px solid var(--ai)}
+.muted{color:var(--doux);font-size:14px;margin:0 0 8px}
+.s{font-size:13px;color:var(--doux);overflow-wrap:anywhere}
+.t{font-weight:650;overflow-wrap:anywhere}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.btn{-webkit-appearance:none;appearance:none;border:1px solid var(--trait);background:var(--carte);color:var(--encre);border-radius:10px;padding:9px 14px;font:inherit;font-size:15px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;text-decoration:none;min-height:42px}
+.btn.prim{background:var(--ai);border-color:var(--ai);color:#fff}
+.btn.shu{background:var(--shu);border-color:var(--shu);color:#fff}
+.btn.ghost{background:transparent}
+.btn.small{padding:5px 10px;min-height:34px;font-size:14px}
+.btn.danger{color:var(--shu);border-color:var(--shu-pale);background:transparent}
+.btn.full{width:100%}
+.btn[disabled]{opacity:.35}
+label.f{display:block;margin:12px 0 4px;font-size:13px;color:var(--doux);font-weight:650}
+input,textarea,select{font:inherit;font-size:16px;width:100%;min-width:0;border:1px solid var(--trait);border-radius:10px;padding:10px 12px;background:#fff;color:var(--encre)}
+input,textarea{-webkit-appearance:none;appearance:none}
+input[type=date],input[type=time]{-webkit-appearance:none;min-width:0;min-height:44px;display:block}
+input[type=checkbox]{width:22px;height:22px;-webkit-appearance:checkbox;appearance:auto;flex:none;margin:0}
+textarea{min-height:92px;resize:vertical}
+select{min-height:44px}
+.check{display:flex;gap:10px;align-items:center;margin-top:12px;font-weight:600}
+.seg{display:flex;background:#EDE6D8;border-radius:12px;padding:3px;gap:3px;margin:0 0 12px}
+.seg button{flex:1;border:0;background:transparent;border-radius:9px;padding:8px 4px;font:inherit;font-size:14px;font-weight:650;color:var(--doux);cursor:pointer}
+.seg button.on{background:var(--carte);color:var(--encre);box-shadow:0 1px 2px rgba(0,0,0,.1)}
+.seg .n{font-weight:500;opacity:.75}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 10px;align-items:center}
+.chip{border:1px solid var(--trait);background:var(--carte);border-radius:999px;padding:5px 12px;font:inherit;font-size:14px;font-weight:650;color:var(--doux);cursor:pointer}
+.chip.on{background:var(--encre);color:#fff;border-color:var(--encre)}
+.badge{display:inline-block;font-size:11px;font-weight:750;letter-spacing:.03em;padding:2px 8px;border-radius:999px;background:var(--ai-pale);color:var(--ai);white-space:nowrap}
+.badge.tiktok{background:#111;color:#fff}.badge.facebook{background:#1877F2;color:#fff}.badge.instagram{background:#B02E7C;color:#fff}.badge.youtube{background:#D61F14;color:#fff}.badge.carte{background:var(--matcha-pale);color:var(--matcha)}.badge.note{background:var(--ambre-pale);color:var(--ambre)}
+.st-a-faire{background:var(--shu-pale);color:var(--shu)}.st-inscrit{background:var(--ambre-pale);color:var(--ambre)}.st-reserve{background:var(--matcha-pale);color:var(--matcha)}.st-abandon{background:#EEE;color:#777}
+.item{display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-top:1px solid var(--trait);color:inherit}
+.item:first-child{border-top:0;padding-top:2px}
+.corps{flex:1;min-width:0}
+.lien-plein{color:inherit;text-decoration:none}
+.jour{display:flex;gap:12px;align-items:center}
+.num{width:46px;height:46px;border-radius:12px;background:var(--ai);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:750;font-size:18px;line-height:1.05;flex:none}
+.num small{font-size:10px;font-weight:650;opacity:.85;text-transform:uppercase}
+.jour.today .num{background:var(--shu)}
+nav#nav{position:fixed;left:0;right:0;bottom:0;z-index:6;background:rgba(255,253,248,.97);border-top:1px solid var(--trait);display:flex;padding:5px 4px calc(5px + var(--sb));-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+nav#nav a{flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;text-decoration:none;color:var(--doux);font-size:11px;font-weight:650;position:relative;padding:4px 0}
+nav#nav svg{width:25px;height:25px}
+nav#nav a.on{color:var(--shu)}
+.pastille{position:absolute;top:0;left:calc(50% + 7px);background:var(--shu);color:#fff;border-radius:999px;font-size:10px;font-weight:750;min-width:17px;height:17px;line-height:17px;padding:0 4px;text-align:center}
+#toast{position:fixed;left:50%;bottom:calc(86px + var(--sb));transform:translateX(-50%);background:var(--encre);color:#fff;padding:9px 16px;border-radius:999px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:40;max-width:90vw;text-align:center}
+#toast.on{opacity:1}#toast.err{background:var(--shu)}
+#maj{position:fixed;left:12px;right:12px;bottom:calc(84px + var(--sb));z-index:30;background:var(--ai);color:#fff;border-radius:14px;padding:12px 14px;display:flex;gap:10px;align-items:center;box-shadow:0 6px 20px rgba(0,0,0,.18)}
+#maj[hidden]{display:none}
+.overlay{position:fixed;inset:0;background:#fff;z-index:35;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:calc(20px + var(--st)) 20px calc(20px + var(--sb));text-align:center;overflow:auto}
+.ja{font-size:clamp(28px,8.5vw,54px);font-weight:700;line-height:1.35;font-family:"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;overflow-wrap:anywhere}
+.overlay img{max-width:100%;max-height:82vh;object-fit:contain}
+.overlay .fermer{position:fixed;top:calc(10px + var(--st));right:12px}
+.big{font-size:28px;font-weight:750}
+.bar{height:8px;background:#EDE6D8;border-radius:99px;overflow:hidden;margin-top:4px}.bar i{display:block;height:100%;background:var(--ai)}
+.thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px;margin-top:10px}
+.th{position:relative;border:1px solid var(--trait);border-radius:10px;overflow:hidden;background:#fff;aspect-ratio:1/1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-decoration:none;color:var(--encre);font-size:12px;padding:4px;text-align:center}
+.th img{width:100%;height:100%;object-fit:cover}
+.th .x{position:absolute;top:3px;right:3px;width:26px;height:26px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;font-size:15px;line-height:26px;padding:0;cursor:pointer}
+.empty{text-align:center;color:var(--doux);padding:18px 8px}
+.conv{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:end}
+.conv .eq{padding-bottom:12px;color:var(--doux)}
+.file-btn{position:relative;overflow:hidden}
+.file-btn input{position:absolute;inset:0;opacity:0;cursor:pointer;font-size:0}
+.kv{display:flex;justify-content:space-between;gap:8px;padding:5px 0;font-size:15px}
+.hint{font-size:13px;color:var(--doux);margin-top:6px}
+@media (min-width:900px){body{padding-bottom:90px}nav#nav{max-width:720px;margin:0 auto;border:1px solid var(--trait);border-radius:16px 16px 0 0}}
+</style>
+</head>
+<body>
+<header id="top"><button id="back" hidden aria-label="Retour">‹</button><div class="tw"><div id="eyebrow"></div><h1 id="title">Japon 2027</h1></div></header>
+<main id="view"><div class="empty">Chargement…</div></main>
+<nav id="nav"></nav>
+<div id="maj" hidden><div style="flex:1">Nouvelle version disponible.</div><button class="btn small" data-act="maj">Mettre à jour</button></div>
+<div id="toast" role="status"></div>
+<script>
+'use strict';
+/* =====================================================================
+   Japon 2027 — appli de préparation et de voyage (PWA, données locales).
+   Règles : voir CLAUDE.md du dépôt. Aucune donnée personnelle dans ce fichier.
+   ===================================================================== */
+const APP_VERSION = '2026.11.13-1';
+const DB_NAME = 'japon-2027', DB_VERSION = 1;
+const STORES = ['idees', 'etapes', 'jours', 'rappels', 'billets', 'depenses', 'meta', 'sauvegardes'];
+const DATA_STORES = ['idees', 'etapes', 'jours', 'rappels', 'billets', 'depenses'];
+const SHARED_SETTINGS = ['debut', 'fin', 'voyageurs', 'taux', 'tauxDate', 'budgetPrevu', 'updatedAt'];
+const LOCAL_KEY = 'japon-2027-local';
+const EXCHANGE_FORMAT = 'japon-2027-echange';
+const MAX_BACKUPS = 3;
+
+const S = { idees: [], etapes: [], jours: [], rappels: [], billets: [], depenses: [] };
+let SET = { id: 'settings' };   // réglages partagés entre téléphones
+let LOC = {};                   // réglages de cet appareil (localStorage)
+let db = null, RECU = null, PENDING = null, LAST_ROUTE = '';
+const $ = s => document.querySelector(s);
+const view = $('#view'), nav = $('#nav');
+
+/* ---------- Outils ---------- */
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const safeUrl = u => /^https?:\/\//i.test(String(u || '')) ? String(u) : '';
+const cmpFr = (a, b) => String(a).localeCompare(String(b), 'fr');
+const now = () => new Date().toISOString();
+function uid(p) { const a = new Uint8Array(9); crypto.getRandomValues(a); return p + '-' + Array.from(a, b => (b % 36).toString(36)).join(''); }
+function parseNum(s) { if (typeof s === 'number') return s; const n = Number(String(s == null ? '' : s).replace(/[\s\u00a0\u202f]/g, '').replace(',', '.')); return n; }
+const fmtEur = n => (Math.round(n * 100) / 100).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' });
+const fmtYen = n => Math.round(n).toLocaleString('fr-FR') + ' ¥';
+const fmtNum = n => Number(n).toLocaleString('fr-FR', { maximumFractionDigits: 2 });
+const firstLine = s => String(s || '').split(/\n/)[0].trim();
+function byId(store, id) { return S[store].find(x => x.id === id); }
+function live(store) { return S[store].filter(x => !x.deleted); }
+function saveLoc() { try { localStorage.setItem(LOCAL_KEY, JSON.stringify(LOC)); } catch (e) { /* stockage plein ou privé */ } }
+let toastTimer = 0;
+function toast(msg, err) { const t = $('#toast'); t.textContent = msg; t.className = 'on' + (err ? ' err' : ''); clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.className = ''; }, err ? 3800 : 1700); }
+function go(h) { if (location.hash === h) render(); else location.hash = h; }
+
+/* ---------- Dates (chaînes AAAA-MM-JJ, heure locale) ---------- */
+function ymd(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+const todayStr = () => ymd(new Date());
+function parseYmd(s) { const [y, m, d] = String(s).split('-').map(Number); return new Date(y, m - 1, d); }
+function addDays(s, n) { const d = parseYmd(s); d.setDate(d.getDate() + n); return ymd(d); }
+function diffDays(a, b) { return Math.round((parseYmd(b) - parseYmd(a)) / 864e5); }
+const validYmd = s => /^\d{4}-\d{2}-\d{2}$/.test(String(s || ''));
+function tripDays() { if (!validYmd(SET.debut) || !validYmd(SET.fin) || SET.fin < SET.debut) return []; const out = []; let d = SET.debut, g = 0; while (d <= SET.fin && g++ < 120) { out.push(d); d = addDays(d, 1); } return out; }
+function dayLabel(s, opt) { return parseYmd(s).toLocaleDateString('fr-FR', opt || { weekday: 'short', day: 'numeric', month: 'long' }); }
+const JSEM = ['dim', 'lun', 'mar', 'mer', 'jeu', 'ven', 'sam'];
+function jst(y, m, d, h, mi) { return new Date(Date.UTC(y, m - 1, d, h - 9, mi)); } // heure du Japon (UTC+9, sans heure d'été)
+function addMonths(y, m, n) { const i = y * 12 + (m - 1) + n; return { y: Math.floor(i / 12), m: (i % 12) + 1 }; }
+const daysInMonth = (y, m) => new Date(y, m, 0).getDate();
+function fmtParis(d) { return d.toLocaleString('fr-FR', { timeZone: 'Europe/Paris', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }); }
+const MOIS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+
+/* ---------- Mode préparation / voyage ---------- */
+function isVoyage() {
+  const m = LOC.mode || 'auto';
+  if (m === 'voyage') return true;
+  if (m === 'prep') return false;
+  const t = todayStr();
+  return !!(validYmd(SET.debut) && validYmd(SET.fin) && t >= addDays(SET.debut, -1) && t <= SET.fin);
+}
+function defaultEyebrow() {
+  const t = todayStr();
+  if (!validYmd(SET.debut)) return 'Préparation';
+  if (t < SET.debut) { const n = diffDays(t, SET.debut); return n === 1 ? 'Départ demain' : 'Départ dans ' + n + ' jours'; }
+  const days = tripDays();
+  if (days.includes(t)) return 'Jour ' + (days.indexOf(t) + 1) + ' sur ' + days.length;
+  return 'Voyage terminé';
+}
+
+/* ---------- Base de données (IndexedDB) ---------- */
+function openDB() {
+  return new Promise((res, rej) => {
+    const r = indexedDB.open(DB_NAME, DB_VERSION);
+    r.onupgradeneeded = () => { const d = r.result; for (const s of STORES) if (!d.objectStoreNames.contains(s)) d.createObjectStore(s, { keyPath: 'id' }); };
+    r.onsuccess = () => { const d = r.result; d.onversionchange = () => { d.close(); location.reload(); }; res(d); };
+    r.onerror = () => rej(r.error);
+    r.onblocked = () => toast('Fermez les autres fenêtres de l’appli', true);
+  });
+}
+const reqP = r => new Promise((res, rej) => { r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+const txDone = t => new Promise((res, rej) => { t.oncomplete = () => res(); t.onerror = () => rej(t.error); t.onabort = () => rej(t.error || new Error('Écriture annulée')); });
+const getAll = s => reqP(db.transaction(s, 'readonly').objectStore(s).getAll());
+async function putMany(store, recs) { const t = db.transaction(store, 'readwrite'); const os = t.objectStore(store); for (const r of recs) os.put(r); await txDone(t); }
+// File d'écriture : les enregistrements partent dans l'ordre, une erreur n'arrête pas les suivants.
+let WQ = Promise.resolve();
+function persist(store, recs) { const copies = recs.map(r => JSON.parse(JSON.stringify(r))); const p = WQ.then(() => putMany(store, copies)); WQ = p.catch(() => {}); return p; }
+async function saveRec(store, rec) {
+  const t = now(); rec.updatedAt = t; if (!rec.createdAt) rec.createdAt = t;
+  const arr = S[store]; if (!arr.includes(rec)) { const i = arr.findIndex(x => x.id === rec.id); if (i >= 0) arr[i] = rec; else arr.push(rec); }
+  try { await persist(store, [rec]); } catch (e) { toast('Enregistrement impossible : ' + (e && e.message || e), true); throw e; }
+  return rec;
+}
+async function saveSettings() { SET.id = 'settings'; SET.updatedAt = now(); await persist('meta', [SET]); }
+async function softDelete(store, id) { const r = byId(store, id); if (!r) return; r.deleted = true; await saveRec(store, r); }
+
+/* ---------- Idées (liens TikTok, Facebook…) ---------- */
+const SRC = { tiktok: 'TikTok', facebook: 'Facebook', instagram: 'Instagram', youtube: 'YouTube', carte: 'Carte', web: 'Site', note: 'Note' };
+function srcOf(u) {
+  let h = ''; try { h = new URL(u).hostname.toLowerCase(); } catch (e) { return 'web'; }
+  if (/(^|\.)tiktok\.com$/.test(h)) return 'tiktok';
+  if (/(^|\.)(facebook\.com|fb\.watch|fb\.com|fb\.me)$/.test(h)) return 'facebook';
+  if (/(^|\.)instagram\.com$/.test(h) || h === 'instagr.am') return 'instagram';
+  if (/(^|\.)(youtube\.com|youtu\.be)$/.test(h)) return 'youtube';
+  if (h === 'maps.app.goo.gl' || h === 'goo.gl' || /(^|\.)google\.[a-z.]+$/.test(h) && /\/maps/.test(u)) return 'carte';
+  return 'web';
+}
+const TRACKING = /^(utm_.*|mibextid|rdid|share_url|_r|_t|is_from_webapp|sender_device|igsh|igshid|si|fbclid|share_app_id|refer|web_id|sec_user_id|checksum|u_code|preview_pb|language|timestamp|user_id|share_link_id|share_item_id|tt_from|app|social_sharing|sharer_language)$/i;
+function normUrl(u) {
+  try {
+    const x = new URL(String(u).trim()); x.hash = '';
+    for (const k of [...x.searchParams.keys()]) if (TRACKING.test(k)) x.searchParams.delete(k);
+    const host = x.host.toLowerCase().replace(/^(www|m|mobile)\./, '');
+    const q = x.searchParams.toString();
+    return 'https://' + host + x.pathname.replace(/\/+$/, '') + (q ? '?' + q : '');
+  } catch (e) { return String(u).trim(); }
+}
+function extractUrls(text) {
+  const out = [], re = /https?:\/\/[^\s<>"'«»]+/gi; let m;
+  while ((m = re.exec(String(text || '')))) { let u = m[0]; while (/[.,;:!?)\]}»”’]$/.test(u)) u = u.slice(0, -1); out.push(u); }
+  return out;
+}
+function shortUrl(u) { try { const x = new URL(u); const p = x.pathname.length > 32 ? x.pathname.slice(0, 30) + '…' : x.pathname; return x.host.replace(/^www\./, '') + (p === '/' ? '' : p); } catch (e) { return String(u || '').slice(0, 40); } }
+function ideeTitre(i) { return i.titre || firstLine(i.note) || (i.url ? shortUrl(i.url) : 'Idée'); }
+async function addIdeas(text, par, extra) {
+  extra = extra || {};
+  const urls = extractUrls(text);
+  const seen = new Set(live('idees').filter(i => i.url).map(i => normUrl(i.url)));
+  const recs = []; let doublons = 0; const t = now();
+  const base = () => ({ titre: extra.titre || '', note: extra.note || '', ville: extra.ville || '', par: par || '', etoile: false, statut: 'a-trier', createdAt: t, updatedAt: t });
+  for (const u of urls) { const n = normUrl(u); if (seen.has(n)) { doublons++; continue; } seen.add(n); recs.push(Object.assign({ id: uid('i'), url: u, source: srcOf(u) }, base())); }
+  if (!urls.length && String(text || '').trim()) {
+    const lines = String(text).trim().split(/\n+/);
+    recs.push(Object.assign({ id: uid('i'), url: '', source: 'note' }, base(), { titre: lines[0].slice(0, 140), note: lines.slice(1).join('\n') }));
+  }
+  if (recs.length) { await persist('idees', recs); S.idees.push(...recs); }
+  return { ajout: recs.length, doublons, recs };
+}
+
+/* ---------- Itinéraire ---------- */
+const byOrdre = (a, b) => (a.ordre || 0) - (b.ordre || 0) || cmpFr(a.heure || '', b.heure || '') || cmpFr(a.createdAt || '', b.createdAt || '');
+const stepsOf = d => live('etapes').filter(e => e.jour === d).sort(byOrdre);
+const jourRec = d => byId('jours', 'j-' + d);
+function nextOrdre(jour, exceptId) { let m = 0; for (const e of live('etapes')) if ((e.jour || null) === (jour || null) && e.id !== exceptId) m = Math.max(m, e.ordre || 0); return m + 1; }
+function villesAll() {
+  const set = new Set(['Tokyo', 'Kyoto', 'Osaka', 'Nara', 'Uji', 'Hiroshima', 'Miyajima', 'Kobe', 'Himeji', 'Hakone', 'Nikko', 'Kamakura']);
+  for (const s of ['idees', 'etapes', 'jours']) for (const r of live(s)) if (r.ville) set.add(r.ville);
+  return [...set].sort(cmpFr);
+}
+const villesDatalist = () => `<datalist id="villes">${villesAll().map(v => `<option value="${esc(v)}">`).join('')}</datalist>`;
+function mapQuery(e) { return e.adresse || e.adresseJa || [e.titre, e.ville, 'Japon'].filter(Boolean).join(', '); }
+function mapUrl(e) { return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(mapQuery(e)); }
+function plansUrl(e) { return 'https://maps.apple.com/?q=' + encodeURIComponent(e.titre || mapQuery(e)) + '&address=' + encodeURIComponent(mapQuery(e)); }
+function mapDayUrl(steps) { const q = steps.filter(e => e.adresse || e.adresseJa || e.titre).map(mapQuery); if (q.length < 2) return ''; return 'https://www.google.com/maps/dir/' + q.slice(0, 10).map(encodeURIComponent).join('/'); }
+const IS_IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const IS_MOBILE = IS_IOS || /Android/.test(navigator.userAgent);
+// Une étape avec une heure se range d'elle-même avant la première étape plus tardive du même jour.
+async function placeByTime(rec) {
+  if (!rec.jour || !rec.heure) return;
+  const others = live('etapes').filter(e => e.jour === rec.jour && e.id !== rec.id).sort(byOrdre);
+  let idx = others.findIndex(e => e.heure && e.heure > rec.heure); if (idx < 0) idx = others.length;
+  others.splice(idx, 0, rec);
+  const changed = [];
+  others.forEach((e, k) => { if (e.ordre !== k + 1) { e.ordre = k + 1; if (e !== rec) changed.push(e); } });
+  for (const e of changed) await saveRec('etapes', e);
+}
+const HOOKS = {
+  'etapes.jour': async rec => { rec.jour = validYmd(rec.jour) ? rec.jour : null; rec.ordre = nextOrdre(rec.jour, rec.id); await placeByTime(rec); },
+  'etapes.heure': rec => placeByTime(rec),
+  'depenses.montant': rec => { if (rec.montant == null || !(rec.montant > 0)) rec.montant = 0; }
+};
+
+/* ---------- Réservations à ne pas rater ---------- */
+// Règles relevées le 13 novembre 2026 (sites officiels et guides concordants) : à revérifier avant la date.
+const MODELES = {
+  ghibli: { titre: 'Musée Ghibli (Mitaka)', court: 'Musée Ghibli', lien: 'https://www.ghibli-museum.jp/en/tickets/', regle: 'Vente en ligne sur le site international de Lawson Ticket le 10 du mois précédent à 10 h (heure du Japon), pour tout le mois de la visite. Les billets partent en quelques minutes : soyez connectés avant. Nom exact du passeport. Musée fermé le mardi en général.' },
+  nintendo: { titre: 'Nintendo Museum (Uji)', court: 'Nintendo Museum', lien: 'https://museum.nintendo.com/en/', regle: 'Tirage au sort avec un compte Nintendo : inscription pendant tout le mois situé 3 mois avant la visite, résultats le 1er du mois suivant, paiement dans les 7 jours. Les places restantes sont vendues ensuite. Passeport demandé à l’entrée ; QR code disponible la veille à partir de 14 h.' },
+  palais: { titre: 'Visite guidée du palais impérial (Tokyo)', court: 'Palais impérial', lien: 'https://sankan.kunaicho.go.jp/english/', regle: 'Inscription en ligne gratuite à partir du 1er du mois précédent à 5 h (heure du Japon), au plus tard 4 jours avant. Visites du mardi au samedi, à 10 h et à 13 h 30. Pièce d’identité demandée. Sinon, tickets du jour à la porte Kikyō-mon.' },
+  shinkansen: { titre: 'Billets de Shinkansen', court: 'Shinkansen', lien: 'https://smart-ex.jp/en/', regle: 'Réservation un mois avant le trajet, à partir de 10 h (heure du Japon). Pas indispensable hors grandes vacances japonaises, mais utile pour choisir ses places ou réserver une place « grosse valise ».' },
+  hotel: { titre: 'Hôtels', court: 'Hôtels', lien: '', regle: 'Pas de date d’ouverture : à réserver dès que les vols sont pris.' },
+  libre: { titre: 'Autre réservation', court: 'Autre', lien: '', regle: '' }
+};
+const STATUTS = { 'a-faire': 'À faire', inscrit: 'Inscrits', reserve: 'Réservé', abandon: 'Abandonné' };
+function rappelVisite(r) {
+  if (r.etapeId) { const e = byId('etapes', r.etapeId); if (e && !e.deleted && e.jour) return { date: e.jour, base: 'etape' }; }
+  if (validYmd(r.dateVisite)) return { date: r.dateVisite, base: 'visite' };
+  if (validYmd(SET.debut)) return { date: SET.debut, base: 'debut' };
+  return { date: null, base: null };
+}
+function rappelCalc(r) {
+  const v = rappelVisite(r); const o = { start: null, end: null, allDay: false, base: v.base, visite: v.date, html: '' };
+  const mod = r.modele;
+  if (mod === 'libre' || mod === 'hotel') {
+    o.base = 'manuel';
+    if (validYmd(r.ouverture)) { const [y, m, d] = r.ouverture.split('-').map(Number); o.start = new Date(y, m - 1, d, 9, 0); o.allDay = true; o.html = 'À faire le <b>' + esc(dayLabel(r.ouverture, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })) + '</b>'; }
+    else o.html = 'Sans date : indiquez quand vous voulez le faire.';
+    return o;
+  }
+  if (!v.date) { o.html = 'Indiquez les dates du voyage ou le jour de la visite.'; return o; }
+  const [y, m, d] = v.date.split('-').map(Number);
+  if (mod === 'ghibli') { const p = addMonths(y, m, -1); o.start = jst(p.y, p.m, 10, 10, 0); o.html = 'Ouverture des ventes : <b>' + esc(fmtParis(o.start)) + '</b> (heure de Paris)'; }
+  else if (mod === 'palais') { const p = addMonths(y, m, -1); o.start = jst(p.y, p.m, 1, 5, 0); const f = parseYmd(addDays(v.date, -4)); o.end = jst(f.getFullYear(), f.getMonth() + 1, f.getDate(), 23, 59); o.html = 'Inscriptions dès le <b>' + esc(fmtParis(o.start)) + '</b> (heure de Paris), jusqu’au ' + esc(dayLabel(ymd(f), { day: 'numeric', month: 'long' })); }
+  else if (mod === 'shinkansen') { const p = addMonths(y, m, -1); const dd = Math.min(d, daysInMonth(p.y, p.m)); o.start = jst(p.y, p.m, dd, 10, 0); o.html = 'Réservation possible dès le <b>' + esc(fmtParis(o.start)) + '</b> (heure de Paris)'; }
+  else if (mod === 'nintendo') { const p = addMonths(y, m, -3), q = addMonths(y, m, -2); o.start = new Date(p.y, p.m - 1, 1, 9, 0); o.end = new Date(q.y, q.m - 1, 1, 0, 0); o.allDay = true; o.html = 'Inscription au tirage : <b>du 1er au ' + daysInMonth(p.y, p.m) + ' ' + MOIS[p.m - 1] + ' ' + p.y + '</b> · résultats le 1er ' + MOIS[q.m - 1]; }
+  return o;
+}
+function rappelEtat(r, o) {
+  // Renvoie {urgent, txt} : urgent = à faire dans les 30 jours ou fenêtre ouverte.
+  if (!o.start || r.statut === 'reserve' || r.statut === 'abandon') return { urgent: false, txt: '' };
+  const t = Date.now(), j = Math.ceil((o.start - t) / 864e5);
+  if (o.start > t) return { urgent: j <= 30 && r.statut !== 'inscrit', txt: j <= 1 ? (j === 1 ? 'demain' : 'aujourd’hui') : 'dans ' + j + ' jours' };
+  if (o.end && o.end < t) return { urgent: false, txt: 'fenêtre passée' };
+  return { urgent: r.statut !== 'inscrit', txt: 'c’est ouvert' };
+}
+function rappelsUrgents() { return live('rappels').filter(r => rappelEtat(r, rappelCalc(r)).urgent); }
+
+/* ---------- Budget ---------- */
+const CATS = [['repas', 'Repas', '🍜'], ['transport', 'Transport', '🚆'], ['visites', 'Visites', '⛩️'], ['hebergement', 'Hébergement', '🏨'], ['shopping', 'Shopping', '🛍️'], ['autre', 'Autre', '•']];
+const catLabel = k => (CATS.find(c => c[0] === k) || CATS[5]);
+function eurOf(d) { if (d.devise === 'EUR') return d.montant; const t = d.taux || SET.taux; return t ? d.montant / t : null; }
+
+/* ---------- Billets ---------- */
+const TYPES = [['vol', 'Vol', '✈️'], ['train', 'Train', '🚄'], ['visite', 'Visite / musée', '🎟️'], ['hotel', 'Hôtel', '🏨'], ['autre', 'Autre', '📄']];
+const typeOf = k => (TYPES.find(t => t[0] === k) || TYPES[4]);
+const BLOBS = new Map();
+function blobUrl(f) {
+  if (BLOBS.has(f.id)) return BLOBS.get(f.id);
+  try { const [h, b64] = f.data.split(','); const bin = atob(b64); const u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i); const url = URL.createObjectURL(new Blob([u8], { type: h.slice(5).split(';')[0] })); BLOBS.set(f.id, url); return url; } catch (e) { return ''; }
+}
+const readDataUrl = f => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = () => rej(r.error); r.readAsDataURL(f); });
+async function compresser(f) {
+  const data = await readDataUrl(f);
+  const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error(f.name + ' : image illisible')); i.src = data; });
+  const w = img.naturalWidth, h = img.naturalHeight;
+  if (Math.max(w, h) <= 2000 && f.size < 1.5e6 && /^data:image\/(png|jpeg);/.test(data)) return { data, type: f.type, w, h };
+  const k = Math.min(1, 2000 / Math.max(w, h)); const c = document.createElement('canvas'); c.width = Math.round(w * k); c.height = Math.round(h * k);
+  const ctx = c.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height); ctx.drawImage(img, 0, 0, c.width, c.height);
+  return { data: c.toDataURL('image/jpeg', 0.88), type: 'image/jpeg', w: c.width, h: c.height };
+}
+async function lireFichier(f) {
+  if (f.size > 25e6) throw new Error(f.name + ' : trop lourd (25 Mo au plus)');
+  if (f.type === 'application/pdf' || /\.pdf$/i.test(f.name)) { const data = await readDataUrl(f); return { id: uid('f'), nom: f.name, type: 'application/pdf', data: data.replace(/^data:[^;,]*/, 'data:application/pdf') }; }
+  if (/^image\//.test(f.type) || /\.(jpe?g|png|heic|webp)$/i.test(f.name)) { const i = await compresser(f); return { id: uid('f'), nom: f.name, type: i.type, data: i.data, w: i.w, h: i.h }; }
+  throw new Error(f.name + ' : seules les photos et les PDF sont acceptés');
+}
+
+/* ---------- Échange entre téléphones, sauvegardes ---------- */
+function pickShared(o) { const r = {}; for (const k of SHARED_SETTINGS) if (o && o[k] !== undefined) r[k] = o[k]; return r; }
+function buildPayload(avecBillets) {
+  const data = {};
+  for (const s of DATA_STORES) data[s] = S[s].map(r => {
+    if (s === 'billets' && !avecBillets && (r.fichiers || []).length) { const c = Object.assign({}, r, { fichiers: [], fichiersOmis: true }); return c; }
+    return r;
+  });
+  return { format: EXCHANGE_FORMAT, version: 1, app: APP_VERSION, exportedAt: now(), appareil: LOC.appareil || '', avecBillets: !!avecBillets, settings: pickShared(SET), data };
+}
+const ID_RE = /^[A-Za-z0-9_-]{1,80}$/;
+const DATA_URL_RE = /^data:(image\/(png|jpeg|webp|gif)|application\/pdf);base64,[A-Za-z0-9+/=]+$/;
+function validatePayload(p) {
+  if (!p || typeof p !== 'object' || p.format !== EXCHANGE_FORMAT) throw new Error('Ce fichier ne vient pas de l’appli Japon 2027.');
+  if (!Number.isInteger(p.version) || p.version < 1) throw new Error('Version de fichier inconnue.');
+  if (p.version > 1) throw new Error('Fichier fait par une version plus récente : mettez d’abord l’appli à jour.');
+  if (!p.data || typeof p.data !== 'object') throw new Error('Fichier incomplet.');
+  const bad = k => k === '__proto__' || k === 'constructor' || k === 'prototype';
+  for (const s of DATA_STORES) {
+    const arr = p.data[s]; if (arr === undefined) continue;
+    if (!Array.isArray(arr)) throw new Error('Fichier abîmé (' + s + ').');
+    const ids = new Set();
+    for (const r of arr) {
+      if (!r || typeof r !== 'object' || Array.isArray(r) || !ID_RE.test(r.id || '')) throw new Error('Fichier abîmé : fiche sans identifiant valable.');
+      if (ids.has(r.id)) throw new Error('Fichier abîmé : fiche en double.'); ids.add(r.id);
+      for (const k of Object.keys(r)) if (bad(k)) throw new Error('Fichier refusé.');
+      if (s === 'billets' && r.fichiers !== undefined) {
+        if (!Array.isArray(r.fichiers)) throw new Error('Fichier abîmé (pièces jointes).');
+        for (const f of r.fichiers) if (!f || !ID_RE.test(f.id || '') || !DATA_URL_RE.test(f.data || '')) throw new Error('Pièce jointe refusée (ni photo ni PDF).');
+      }
+      if (s === 'billets' && r.fichiersRetires !== undefined && (!Array.isArray(r.fichiersRetires) || r.fichiersRetires.some(x => !ID_RE.test(String(x))))) throw new Error('Fichier abîmé (pièces retirées).');
+    }
+  }
+  if (p.settings && (typeof p.settings !== 'object' || Object.keys(p.settings).some(bad))) throw new Error('Réglages refusés.');
+  return p;
+}
+// Pièces jointes : on réunit celles des deux téléphones (rien ne se perd), sauf celles retirées exprès d'un côté.
+function mergeFichiers(l, r) {
+  const out = Object.assign({}, r);
+  const ret = new Set([].concat(l.fichiersRetires || [], r.fichiersRetires || []));
+  const map = new Map(); for (const f of (l.fichiers || [])) map.set(f.id, f); for (const f of (r.fichiers || [])) map.set(f.id, f);
+  out.fichiers = [...map.values()].filter(f => !ret.has(f.id));
+  if (ret.size) out.fichiersRetires = [...ret];
+  if (!r.fichiersOmis || (l.fichiers || []).length) delete out.fichiersOmis;
+  return out;
+}
+function mergePlan(p) {
+  const plan = {}; let nAdd = 0, nUpd = 0;
+  for (const s of DATA_STORES) {
+    const add = [], upd = [];
+    for (const r of (p.data[s] || [])) {
+      const l = byId(s, r.id);
+      const nr = s === 'billets' && l ? mergeFichiers(l, r) : r;
+      if (!l) add.push(nr); else if (String(r.updatedAt || '') > String(l.updatedAt || '')) upd.push(nr);
+    }
+    plan[s] = { add, upd }; nAdd += add.length; nUpd += upd.length;
+  }
+  const set = p.settings && String(p.settings.updatedAt || '') > String(SET.updatedAt || '') ? Object.assign({}, SET, pickShared(p.settings), { id: 'settings' }) : null;
+  return { plan, set, nAdd, nUpd };
+}
+async function createBackup(raison) {
+  const b = { id: 's-' + Date.now() + '-' + uid('x').slice(2, 6), at: now(), raison, payload: buildPayload(true) };
+  await putMany('sauvegardes', [b]);
+  const all = (await getAll('sauvegardes')).sort((a, c) => cmpFr(c.at, a.at));
+  if (all.length > MAX_BACKUPS) { const t = db.transaction('sauvegardes', 'readwrite'); for (const x of all.slice(MAX_BACKUPS)) t.objectStore('sauvegardes').delete(x.id); await txDone(t); }
+  return b;
+}
+async function applyPlan(mp) {
+  const stores = [...DATA_STORES, 'meta'];
+  const t = db.transaction(stores, 'readwrite');
+  for (const s of DATA_STORES) for (const r of mp.plan[s].add.concat(mp.plan[s].upd)) t.objectStore(s).put(r);
+  if (mp.set) t.objectStore('meta').put(mp.set);
+  await txDone(t);
+  await reloadAll();
+}
+async function reloadAll() {
+  for (const s of DATA_STORES) S[s] = await getAll(s);
+  SET = (await reqP(db.transaction('meta', 'readonly').objectStore('meta').get('settings'))) || { id: 'settings' };
+  BLOBS.forEach(u => URL.revokeObjectURL(u)); BLOBS.clear();
+}
+async function shareOrDownload(name, mime, content) {
+  const file = new File([content], name, { type: mime });
+  // Sous automate de test (navigator.webdriver), on télécharge : la feuille de partage bloquerait le test.
+  if (IS_MOBILE && !navigator.webdriver && navigator.canShare && navigator.canShare({ files: [file] })) {
+    try { await navigator.share({ files: [file], title: name }); return 'partage'; }
+    catch (e) { if (e && e.name === 'AbortError') return 'annule'; }
+  }
+  const url = URL.createObjectURL(file); const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60000); return 'telecharge';
+}
+const stamp = () => { const d = new Date(); return ymd(d).replace(/-/g, '') + '-' + String(d.getHours()).padStart(2, '0') + String(d.getMinutes()).padStart(2, '0'); };
+const slug = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '').toLowerCase().slice(0, 30);
+
+/* ---------- Agenda (.ics) ---------- */
+function icsEsc(s) { return String(s || '').replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n'); }
+function icsFold(line) { const enc = new TextEncoder(); const out = []; let cur = '', bytes = 0; for (const ch of line) { const b = enc.encode(ch).length; if (bytes + b > (out.length ? 74 : 75)) { out.push(cur); cur = ch; bytes = b; } else { cur += ch; bytes += b; } } out.push(cur); return out.join('\r\n '); }
+const icsUtc = d => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+const icsDate = d => ymd(d).replace(/-/g, '');
+function rappelIcs(r) {
+  const o = rappelCalc(r); if (!o.start) return null;
+  const m = MODELES[r.modele] || MODELES.libre; const lien = safeUrl(r.lien || m.lien);
+  const L = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Japon 2027//FR', 'CALSCALE:GREGORIAN', 'BEGIN:VEVENT', 'UID:' + r.id + '@japon-2027', 'DTSTAMP:' + icsUtc(new Date())];
+  if (o.allDay) { L.push('DTSTART;VALUE=DATE:' + icsDate(o.start)); const e = new Date(o.start); e.setDate(e.getDate() + 1); L.push('DTEND;VALUE=DATE:' + icsDate(e)); }
+  else { L.push('DTSTART:' + icsUtc(o.start)); L.push('DTEND:' + icsUtc(new Date(o.start.getTime() + 30 * 6e4))); }
+  L.push('SUMMARY:' + icsEsc('Japon : réserver ' + (r.titre || m.titre)));
+  L.push('DESCRIPTION:' + icsEsc([m.regle, r.note, lien].filter(Boolean).join('\n\n')));
+  if (lien) L.push('URL:' + lien);
+  L.push('BEGIN:VALARM', 'ACTION:DISPLAY', 'TRIGGER:-P1D', 'DESCRIPTION:' + icsEsc('Demain : ' + (r.titre || m.titre)), 'END:VALARM');
+  if (!o.allDay) L.push('BEGIN:VALARM', 'ACTION:DISPLAY', 'TRIGGER:-PT30M', 'DESCRIPTION:' + icsEsc('Dans 30 min : ' + (r.titre || m.titre)), 'END:VALARM');
+  L.push('END:VEVENT', 'END:VCALENDAR');
+  return L.map(icsFold).join('\r\n') + '\r\n';
+}
+
+/* =====================================================================
+   Écrans
+   ===================================================================== */
+function H(title, opt) {
+  opt = opt || {};
+  $('#title').textContent = title;
+  $('#eyebrow').textContent = opt.eyebrow || defaultEyebrow();
+  const b = $('#back'); if (opt.back) { b.hidden = false; b.dataset.to = opt.back; } else b.hidden = true;
+  document.title = title + ' · Japon 2027';
+}
+const notFound = back => { H('Introuvable', { back }); return '<div class="empty">Cette fiche n’existe plus.</div>'; };
+function seg(k, items, cur, act) { return `<div class="seg">${items.map(([v, l]) => `<button class="${cur === v ? 'on' : ''}" data-act="${act}" data-k="${k}" data-v="${esc(v)}">${l}</button>`).join('')}</div>`; }
+function voyageursChips(k) {
+  const vs = (SET.voyageurs || []).filter(Boolean); if (!vs.length) return '';
+  return `<div class="chips" style="margin-top:8px"><span class="s">Trouvé par :</span>${vs.map(v => `<button class="chip ${LOC[k] === v ? 'on' : ''}" data-act="pick" data-k="${k}" data-v="${esc(v)}">${esc(v)}</button>`).join('')}</div>`;
+}
+function voyageurSelect(field, val, label) {
+  const vs = (SET.voyageurs || []).filter(Boolean); if (!vs.length && !val) return '';
+  const opts = [''].concat(vs); if (val && !vs.includes(val)) opts.push(val);
+  return `<label class="f">${label}</label><select data-f="${field}">${opts.map(v => `<option value="${esc(v)}" ${v === (val || '') ? 'selected' : ''}>${v ? esc(v) : '—'}</option>`).join('')}</select>`;
+}
+function firstRunCards() {
+  let h = '';
+  const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  if (IS_MOBILE && !standalone && !LOC.installVu) {
+    h += `<div class="card alerte"><h2>Installez l’appli d’abord</h2><p class="muted">${IS_IOS ? 'Dans Safari : bouton Partager, puis « Sur l’écran d’accueil ». Sur iPhone, l’appli de l’écran d’accueil ne voit pas ce qui a été saisi dans Safari : installez-la avant de commencer.' : 'Dans Chrome : menu ⋮, puis « Installer l’application » (ou « Ajouter à l’écran d’accueil »). Elle apparaîtra ensuite dans le menu Partager de TikTok et de Facebook.'}</p><button class="btn small ghost" data-act="install-vu">C’est fait</button></div>`;
+  }
+  if (!validYmd(SET.debut) || !(SET.voyageurs || []).some(Boolean)) h += `<div class="card info"><h2>Pour commencer</h2><p class="muted">Indiquez les dates du séjour (même provisoires) et vos prénoms.</p><a class="btn prim" href="#/reglages">Ouvrir les réglages</a></div>`;
+  return h;
+}
+function rappelBanner() {
+  const u = rappelsUrgents(); if (!u.length) return '';
+  const r = u.map(r => ({ r, o: rappelCalc(r) })).sort((a, b) => a.o.start - b.o.start)[0];
+  return `<a class="card lien-plein alerte" href="#/rappel/${r.r.id}"><div class="t">À réserver bientôt : ${esc(r.r.titre)}</div><div class="s">${rappelEtat(r.r, r.o).txt}${u.length > 1 ? ' · et ' + (u.length - 1) + ' autre' + (u.length > 2 ? 's' : '') : ''}</div></a>`;
+}
+
+/* ----- Idées ----- */
+function ideeItem(i) {
+  const st = i.statut || 'a-trier', u = safeUrl(i.url);
+  return `<div class="item"><div class="corps"><a class="lien-plein" href="#/idee/${i.id}"><div class="row" style="gap:6px"><span class="badge ${esc(i.source)}">${SRC[i.source] || 'Lien'}</span>${i.etoile ? '<span style="color:var(--shu)">★</span>' : ''}${i.ville ? `<span class="s">${esc(i.ville)}</span>` : ''}${i.par ? `<span class="s">· ${esc(i.par)}</span>` : ''}</div><div class="t" style="margin-top:3px">${esc(ideeTitre(i))}</div>${i.note && i.titre ? `<div class="s">${esc(firstLine(i.note))}</div>` : ''}</a>
+  <div class="row" style="margin-top:8px">${u ? `<a class="btn small" href="${esc(u)}" target="_blank" rel="noopener">Voir ↗</a>` : ''}${st !== 'garde' ? `<button class="btn small" data-act="idee-statut" data-id="${i.id}" data-v="garde">✓ On garde</button>` : ''}${st !== 'ecarte' ? `<button class="btn small" data-act="idee-statut" data-id="${i.id}" data-v="ecarte">✕ On laisse</button>` : ''}${st !== 'a-trier' ? `<button class="btn small ghost" data-act="idee-statut" data-id="${i.id}" data-v="a-trier">À retrier</button>` : ''}</div></div></div>`;
+}
+function vIdees() {
+  H('Idées à voir');
+  const all = live('idees'); const f = LOC.ideeFiltre || 'a-trier'; const counts = { 'a-trier': 0, garde: 0, ecarte: 0 };
+  all.forEach(i => { counts[i.statut || 'a-trier'] = (counts[i.statut || 'a-trier'] || 0) + 1; });
+  const inF = all.filter(i => (i.statut || 'a-trier') === f);
+  const villes = [...new Set(inF.map(i => i.ville).filter(Boolean))].sort(cmpFr);
+  const ville = villes.includes(LOC.ideeVille) ? LOC.ideeVille : '';
+  const list = inF.filter(i => !ville || i.ville === ville).sort((a, b) => (b.etoile ? 1 : 0) - (a.etoile ? 1 : 0) || cmpFr(b.createdAt || '', a.createdAt || ''));
+  return `${firstRunCards()}${rappelBanner()}
+<div class="card"><h2>Ajouter des liens</h2><p class="muted">Collez un lien TikTok, Facebook… ou tout un paquet de messages : seuls les liens sont gardés, les doublons sont écartés. Sans lien, le texte devient une idée.</p>
+<textarea id="pasteBox" placeholder="Collez ici"></textarea>${voyageursChips('par')}
+<div class="row" style="margin-top:10px"><button class="btn" data-act="coller">Coller</button><button class="btn prim" style="flex:1" data-act="ranger">Ranger dans les idées</button></div></div>
+<div class="seg">${[['a-trier', 'À trier'], ['garde', 'Gardées'], ['ecarte', 'Laissées']].map(([v, l]) => `<button class="${f === v ? 'on' : ''}" data-act="filtre-idees" data-v="${v}">${l} <span class="n">${counts[v] || 0}</span></button>`).join('')}</div>
+${villes.length > 1 ? `<div class="chips"><button class="chip ${ville ? '' : 'on'}" data-act="idee-ville" data-v="">Toutes</button>${villes.map(v => `<button class="chip ${v === ville ? 'on' : ''}" data-act="idee-ville" data-v="${esc(v)}">${esc(v)}</button>`).join('')}</div>` : ''}
+<div class="card">${list.length ? list.map(ideeItem).join('') : `<div class="empty">${f === 'a-trier' ? 'Rien à trier pour l’instant.' : 'Aucune idée ici.'}</div>`}</div>`;
+}
+function vIdee(id) {
+  const i = byId('idees', id); if (!i || i.deleted) return notFound('#/idees');
+  H('Idée', { back: '#/idees' });
+  const st = i.statut || 'a-trier', u = safeUrl(i.url); const e = i.etapeId && byId('etapes', i.etapeId); const eOk = e && !e.deleted;
+  return `<div class="card" data-rec="idees:${i.id}">
+${u ? `<div class="row"><span class="badge ${esc(i.source)}">${SRC[i.source] || 'Lien'}</span><span class="s">${esc(shortUrl(u))}</span></div><a class="btn full" style="margin-top:10px" href="${esc(u)}" target="_blank" rel="noopener">Voir la vidéo ou la page ↗</a>` : ''}
+<label class="f">Ce que c’est</label><input data-f="titre" value="${esc(i.titre || '')}" placeholder="Ex. : ramen dans une ruelle de Shinjuku">
+${i.source === 'tiktok' || i.source === 'youtube' ? `<button class="btn small" style="margin-top:6px" data-act="titre-auto" data-id="${i.id}">Récupérer le titre de la vidéo</button>` : ''}
+<label class="f">Ville</label><input data-f="ville" list="villes" value="${esc(i.ville || '')}" placeholder="Tokyo, Kyoto…">
+<label class="f">À retenir : horaires, prix, réservation, astuce…</label><textarea data-f="note" placeholder="Vous ne reverrez pas la vidéo sur place : notez l’essentiel.">${esc(i.note || '')}</textarea>
+${voyageurSelect('par', i.par, 'Trouvée par')}
+<label class="check"><input type="checkbox" data-f="etoile" ${i.etoile ? 'checked' : ''}> Coup de cœur</label></div>
+<div class="card"><h2>Décision</h2><div class="seg">${[['a-trier', 'À trier'], ['garde', 'On garde'], ['ecarte', 'On laisse']].map(([v, l]) => `<button class="${st === v ? 'on' : ''}" data-act="idee-statut" data-id="${i.id}" data-v="${v}" data-reste="1">${l}</button>`).join('')}</div>
+${st === 'garde' ? (eOk ? `<a class="btn full" href="#/etape/${e.id}">Voir l’étape (${e.jour ? esc(dayLabel(e.jour)) : 'à placer'})</a>` : `<button class="btn prim full" data-act="idee-etape" data-id="${i.id}">Ajouter à l’itinéraire</button>`) : '<p class="muted" style="margin:0">Une idée gardée peut devenir une étape de l’itinéraire.</p>'}</div>
+<button class="btn danger" data-act="supprimer" data-store="idees" data-id="${i.id}" data-to="#/idees">Supprimer cette idée</button>${villesDatalist()}`;
+}
+function vRecu() {
+  if (!RECU) { location.replace('#/idees'); return ''; }
+  H('Lien reçu', { back: '#/idees' });
+  const txt = [RECU.lien, RECU.texte, RECU.titre].join('\n'); const u = extractUrls(txt)[0];
+  if (!u) return `<div class="card"><h2>Aucun lien trouvé</h2><p class="muted">${esc(txt.trim())}</p><button class="btn" data-act="recu-annuler">Retour</button></div>`;
+  const ex = live('idees').find(i => i.url && normUrl(i.url) === normUrl(u));
+  if (ex) return `<div class="card"><h2>Déjà dans vos idées</h2><p>${esc(ideeTitre(ex))}</p><button class="btn prim" data-act="recu-voir" data-id="${ex.id}">Voir l’idée</button></div>`;
+  const note = [...new Set([RECU.titre, RECU.texte].map(s => String(s || '').replace(/https?:\/\/\S+/g, '').trim()).filter(Boolean))].join('\n');
+  return `<div class="card"><div class="row"><span class="badge ${srcOf(u)}">${SRC[srcOf(u)]}</span><span class="s">${esc(shortUrl(u))}</span></div>
+<label class="f">Ville</label><input id="recuVille" list="villes" placeholder="Tokyo, Kyoto…"><label class="f">Quelques mots</label><textarea id="recuNote">${esc(note)}</textarea>${voyageursChips('par')}
+<button class="btn prim full" style="margin-top:12px" data-act="recu-ranger" data-u="${esc(u)}">Ranger dans les idées</button></div>${villesDatalist()}`;
+}
+
+/* ----- Itinéraire ----- */
+function etapeItem(e, opt) {
+  opt = opt || {};
+  const sub = [e.ville, e.reservation ? '🎟 ' + e.reservation : '', opt.hors && e.jour ? 'prévue le ' + dayLabel(e.jour) + ', hors des dates' : ''].filter(Boolean);
+  return `<div class="item"><a class="corps lien-plein" href="#/etape/${e.id}"><div class="t">${e.heure ? `<span style="color:var(--shu)">${esc(e.heure)}</span> · ` : ''}${esc(e.titre || '(sans titre)')}</div>${sub.length ? `<div class="s">${sub.map(esc).join(' · ')}</div>` : ''}</a>${opt.idx != null ? `<div style="display:flex;flex-direction:column;gap:4px"><button class="btn small ghost" data-act="deplacer" data-id="${e.id}" data-dir="-1" ${opt.idx === 0 ? 'disabled' : ''} aria-label="Monter">↑</button><button class="btn small ghost" data-act="deplacer" data-id="${e.id}" data-dir="1" ${opt.idx === opt.n - 1 ? 'disabled' : ''} aria-label="Descendre">↓</button></div>` : ''}</div>`;
+}
+function dayCard(d, k) {
+  const st = stepsOf(d), j = jourRec(d); const villes = [...new Set([j && j.ville].concat(st.map(e => e.ville)).filter(Boolean))];
+  return `<a class="card lien-plein jour ${d === todayStr() ? 'today' : ''}" href="#/jour/${d}"><div class="num">${k + 1}<small>${JSEM[parseYmd(d).getDay()]}</small></div><div class="corps"><div class="t">${esc(dayLabel(d, { weekday: 'long', day: 'numeric', month: 'long' }))}</div><div class="s">${esc(villes.join(' · ') || '—')} · ${st.length} étape${st.length > 1 ? 's' : ''}${j && j.nuit ? ' · nuit : ' + esc(j.nuit) : ''}</div></div></a>`;
+}
+function vItineraire() {
+  H('Itinéraire');
+  const days = tripDays(); const aPlacer = live('etapes').filter(e => !e.jour || !days.includes(e.jour)).sort(byOrdre);
+  return `${!days.length ? `<div class="card info"><h2>Dates du séjour</h2><p class="muted">Indiquez le premier et le dernier jour sur place pour voir les journées.</p><a class="btn prim" href="#/reglages">Régler les dates</a></div>` : ''}
+${aPlacer.length ? `<div class="card"><h2>À placer (${aPlacer.length})</h2>${aPlacer.map(e => etapeItem(e, { hors: true })).join('')}</div>` : ''}
+${days.map(dayCard).join('')}
+<button class="btn full" data-act="etape-new">+ Ajouter une étape</button>`;
+}
+function vJour(d) {
+  if (!validYmd(d)) return notFound('#/itineraire');
+  const days = tripDays(), k = days.indexOf(d);
+  H(k >= 0 ? 'Jour ' + (k + 1) : dayLabel(d), { back: '#/itineraire', eyebrow: dayLabel(d, { weekday: 'long', day: 'numeric', month: 'long' }) });
+  const j = jourRec(d) || {}; const st = stepsOf(d); const bil = live('billets').filter(b => b.date === d); const mu = mapDayUrl(st);
+  return `<div class="card" data-rec="jours:j-${d}" data-date="${d}"><div class="row" style="align-items:flex-start"><div style="flex:1;min-width:140px"><label class="f" style="margin-top:0">Ville du jour</label><input data-f="ville" list="villes" value="${esc(j.ville || '')}"></div><div style="flex:1;min-width:140px"><label class="f" style="margin-top:0">Nuit à</label><input data-f="nuit" value="${esc(j.nuit || '')}" placeholder="Hôtel"></div></div><label class="f">Note du jour</label><input data-f="note" value="${esc(j.note || '')}" placeholder="Ex. : se lever tôt pour Fushimi Inari"></div>
+<div class="card"><h2>Programme</h2>${st.length ? st.map((e, idx) => etapeItem(e, { idx, n: st.length })).join('') : '<div class="empty">Rien de prévu pour l’instant.</div>'}
+<div class="row" style="margin-top:10px"><button class="btn" data-act="etape-new" data-jour="${d}">+ Étape</button>${mu ? `<a class="btn" href="${esc(mu)}" target="_blank" rel="noopener">Carte du jour ↗</a>` : ''}</div></div>
+${bil.length ? `<div class="card"><h2>Billets du jour</h2>${bil.map(billetItem).join('')}</div>` : ''}
+<div class="row">${k > 0 ? `<a class="btn" href="#/jour/${days[k - 1]}">‹ Veille</a>` : ''}<span style="flex:1"></span>${k >= 0 && k < days.length - 1 ? `<a class="btn" href="#/jour/${days[k + 1]}">Lendemain ›</a>` : ''}</div>${villesDatalist()}`;
+}
+function vEtape(id) {
+  const e = byId('etapes', id); if (!e || e.deleted) return notFound('#/itineraire');
+  const days = tripDays(); const back = e.jour && days.includes(e.jour) ? '#/jour/' + e.jour : '#/itineraire';
+  H(e.titre || 'Étape', { back, eyebrow: e.jour ? dayLabel(e.jour, { weekday: 'long', day: 'numeric', month: 'long' }) : 'À placer' });
+  const jours = days.slice(); if (e.jour && !jours.includes(e.jour)) jours.unshift(e.jour);
+  const idee = e.ideeId && byId('idees', e.ideeId); const lien = safeUrl(e.lien);
+  return `<div class="row" style="margin-bottom:12px"><a class="btn shu" href="#/taxi/${e.id}">🚕 Montrer au taxi</a><a class="btn" href="${esc(mapUrl(e))}" target="_blank" rel="noopener">Google Maps ↗</a>${IS_IOS ? `<a class="btn" href="${esc(plansUrl(e))}" target="_blank" rel="noopener">Plans ↗</a>` : ''}</div>
+<div class="card" data-rec="etapes:${e.id}">
+<label class="f" style="margin-top:0">Quoi</label><input data-f="titre" value="${esc(e.titre || '')}" placeholder="Ex. : sanctuaire Fushimi Inari">
+<div class="row" style="align-items:flex-start"><div style="flex:2;min-width:150px"><label class="f">Jour</label><select data-f="jour" data-rerender="1"><option value="">À placer</option>${jours.map((d, k) => `<option value="${d}" ${d === e.jour ? 'selected' : ''}>${days.includes(d) ? 'J' + (days.indexOf(d) + 1) + ' · ' : ''}${esc(dayLabel(d))}</option>`).join('')}</select></div><div style="flex:1;min-width:110px"><label class="f">Heure</label><input type="time" data-f="heure" data-rerender="1" value="${esc(e.heure || '')}"></div></div>
+<label class="f">Ville</label><input data-f="ville" list="villes" value="${esc(e.ville || '')}">
+<label class="f">Adresse</label><input data-f="adresse" value="${esc(e.adresse || '')}" placeholder="Adresse ou nom du lieu">
+<label class="f">Adresse en japonais (pour le taxi)</label><textarea data-f="adresseJa" style="min-height:64px" placeholder="Copiez-la depuis Google Maps ou le site officiel">${esc(e.adresseJa || '')}</textarea>
+<label class="f">Horaires</label><input data-f="horaires" value="${esc(e.horaires || '')}" placeholder="Ex. : 9 h – 17 h, fermé le lundi">
+<label class="f">Prix</label><input data-f="prix" value="${esc(e.prix || '')}" placeholder="Ex. : 1 000 ¥ par personne">
+<label class="f">Réservation</label><input data-f="reservation" value="${esc(e.reservation || '')}" placeholder="Ex. : réservé, n° ABC123">
+<label class="f">Lien (site officiel ou vidéo)</label><input data-f="lien" type="url" value="${esc(e.lien || '')}" placeholder="https://…">${lien ? `<a class="btn small" style="margin-top:6px" href="${esc(lien)}" target="_blank" rel="noopener">Ouvrir le lien ↗</a>` : ''}
+<label class="f">Notes</label><textarea data-f="note">${esc(e.note || '')}</textarea>
+</div>
+${idee && !idee.deleted ? `<p class="s">Vient de l’idée : <a href="#/idee/${idee.id}">${esc(ideeTitre(idee))}</a></p>` : ''}
+<button class="btn danger" data-act="supprimer" data-store="etapes" data-id="${e.id}" data-to="${back}">Supprimer cette étape</button>${villesDatalist()}`;
+}
+function vTaxi(id) {
+  const e = byId('etapes', id); if (!e || e.deleted) return notFound('#/itineraire');
+  H(e.titre || 'Taxi', { back: '#/etape/' + id });
+  const adr = e.adresseJa || e.adresse || '';
+  if (!adr) return `<div class="overlay" data-act="nav" data-to="#/etape/${e.id}"><div class="t" style="font-size:20px">Pas encore d’adresse</div><p class="muted" style="margin-top:8px">Copiez l’adresse en japonais depuis Google Maps ou le site officiel dans la fiche de l’étape.</p><div class="muted" style="margin-top:28px">Touchez l’écran pour revenir</div></div>`;
+  return `<div class="overlay" data-act="nav" data-to="#/etape/${e.id}"><div class="muted">Montrez cet écran au chauffeur</div><div class="ja" lang="ja">${esc(adr)}</div>${e.titre ? `<div style="font-size:19px;margin-top:14px">${esc(e.titre)}</div>` : ''}<div class="ja" lang="ja" style="font-size:clamp(22px,6.5vw,36px);margin-top:26px">この住所までお願いします。</div><div class="muted" style="margin-top:6px">« À cette adresse, s’il vous plaît. »</div><div class="muted" style="margin-top:28px">Touchez l’écran pour revenir</div></div>`;
+}
+
+/* ----- Réservations ----- */
+const statutBadge = s => `<span class="badge st-${esc(s || 'a-faire')}">${STATUTS[s || 'a-faire'] || 'À faire'}</span>`;
+function vRappels() {
+  H('Réservations');
+  const rs = live('rappels').map(r => ({ r, o: rappelCalc(r) }));
+  const rang = x => (x.r.statut === 'reserve' || x.r.statut === 'abandon') ? 2 : (x.o.start ? 0 : 1);
+  rs.sort((a, b) => rang(a) - rang(b) || (a.o.start || 0) - (b.o.start || 0) || cmpFr(a.r.titre, b.r.titre));
+  const present = new Set(rs.map(x => x.r.modele));
+  const ajout = Object.entries(MODELES).filter(([k]) => k === 'libre' || k === 'hotel' || !present.has(k));
+  return `<p class="muted">Ce qui se réserve longtemps à l’avance. Les dates sont calculées à partir du jour prévu de la visite (à défaut, du premier jour du voyage), en heure de Paris.</p>
+${rs.map(({ r, o }) => { const et = rappelEtat(r, o); return `<a class="card lien-plein ${et.urgent ? 'alerte' : ''}" href="#/rappel/${r.id}"><div class="row" style="justify-content:space-between;flex-wrap:nowrap"><div class="t">${esc(r.titre)}</div>${statutBadge(r.statut)}</div><div style="margin-top:4px;font-size:15px">${o.html}</div><div class="s">${[et.txt, o.base === 'debut' ? 'calcul provisoire sur le 1er jour du voyage' : ''].filter(Boolean).join(' · ')}</div></a>`; }).join('')}
+${!rs.length ? '<div class="card"><div class="empty">Aucune réservation suivie pour l’instant.</div></div>' : ''}
+<div class="card"><h2>Ajouter</h2><div class="row">${ajout.map(([k, m]) => `<button class="btn small" data-act="rappel-add" data-v="${k}">+ ${esc(m.court)}</button>`).join('')}</div><p class="hint">Règles relevées le 13 novembre 2026 : revérifiez-les sur le site officiel quelques semaines avant.</p></div>`;
+}
+function vRappel(id) {
+  const r = byId('rappels', id); if (!r || r.deleted) return notFound('#/rappels');
+  H(r.titre || 'Réservation', { back: '#/rappels' });
+  const m = MODELES[r.modele] || MODELES.libre; const o = rappelCalc(r); const lien = safeUrl(r.lien || m.lien);
+  const steps = live('etapes').filter(e => e.jour).sort((a, b) => cmpFr(a.jour, b.jour) || byOrdre(a, b));
+  const manuel = r.modele === 'libre' || r.modele === 'hotel';
+  return `<div class="card ${rappelEtat(r, o).urgent ? 'alerte' : ''}"><div style="font-size:15px">${o.html}</div>${m.regle ? `<p class="muted" style="margin:8px 0 0">${esc(m.regle)}</p>` : ''}
+<div class="row" style="margin-top:10px">${lien ? `<a class="btn prim" href="${esc(lien)}" target="_blank" rel="noopener">Site officiel ↗</a>` : ''}${o.start ? `<button class="btn" data-act="rappel-ics" data-id="${r.id}">📅 Ajouter à mon agenda</button>` : ''}</div></div>
+<div class="card"><h2>Où en êtes-vous ?</h2><div class="seg">${Object.entries(STATUTS).map(([v, l]) => `<button class="${(r.statut || 'a-faire') === v ? 'on' : ''}" data-act="rappel-statut" data-id="${r.id}" data-v="${v}">${l}</button>`).join('')}</div></div>
+<div class="card" data-rec="rappels:${r.id}">
+<label class="f" style="margin-top:0">Nom</label><input data-f="titre" value="${esc(r.titre || '')}">
+${manuel ? `<label class="f">À faire le</label><input type="date" data-f="ouverture" data-rerender="1" value="${esc(r.ouverture || '')}">` : `
+<label class="f">Jour prévu de la visite</label><input type="date" data-f="dateVisite" data-rerender="1" value="${esc(r.dateVisite || '')}">
+${steps.length ? `<label class="f">…ou lié à une étape de l’itinéraire</label><select data-f="etapeId" data-rerender="1"><option value="">—</option>${steps.map(e => `<option value="${e.id}" ${e.id === r.etapeId ? 'selected' : ''}>${esc(dayLabel(e.jour))} · ${esc(e.titre || '(sans titre)')}</option>`).join('')}</select>` : ''}`}
+<label class="f">Lien</label><input type="url" data-f="lien" value="${esc(r.lien || m.lien || '')}">
+<label class="f">Notes (identifiants, numéro de réservation…)</label><textarea data-f="note">${esc(r.note || '')}</textarea></div>
+<button class="btn danger" data-act="supprimer" data-store="rappels" data-id="${r.id}" data-to="#/rappels">Supprimer</button>`;
+}
+
+/* ----- Billets ----- */
+function billetItem(b) {
+  const t = typeOf(b.type); const n = (b.fichiers || []).length;
+  return `<a class="item lien-plein" href="#/billet/${b.id}"><div style="font-size:22px;width:28px;text-align:center">${t[2]}</div><div class="corps"><div class="t">${esc(b.titre || t[1])}</div><div class="s">${[b.date ? dayLabel(b.date) : '', b.heure, b.reference ? 'n° ' + b.reference : '', n ? n + ' pièce' + (n > 1 ? 's' : '') + ' jointe' + (n > 1 ? 's' : '') : (b.fichiersOmis ? 'pièces jointes sur l’autre téléphone' : '')].filter(Boolean).map(esc).join(' · ')}</div></div></a>`;
+}
+function vBillets() {
+  H('Billets');
+  const bs = live('billets').sort((a, b) => cmpFr(a.date || '9999', b.date || '9999') || cmpFr(a.heure || '', b.heure || '') || cmpFr(a.titre || '', b.titre || ''));
+  const groups = new Map(); for (const b of bs) { const k = b.date || ''; if (!groups.has(k)) groups.set(k, []); groups.get(k).push(b); }
+  return `<p class="muted">Confirmations, QR codes, numéros de réservation : tout reste lisible sans réseau. Pour un QR code, une capture d’écran est le plus pratique.</p>
+${[...groups].map(([k, l]) => `<div class="card"><h2>${k ? esc(dayLabel(k, { weekday: 'long', day: 'numeric', month: 'long' })) : 'Sans date'}</h2>${l.map(billetItem).join('')}</div>`).join('') || '<div class="card"><div class="empty">Aucun billet pour l’instant.</div></div>'}
+<button class="btn prim full" data-act="billet-new">+ Ajouter un billet</button>`;
+}
+function vBillet(id) {
+  const b = byId('billets', id); if (!b || b.deleted) return notFound('#/billets');
+  H(b.titre || 'Billet', { back: '#/billets' });
+  const fs = b.fichiers || [];
+  return `<div class="card" data-rec="billets:${b.id}">
+<label class="f" style="margin-top:0">Nom</label><input data-f="titre" value="${esc(b.titre || '')}" placeholder="Ex. : vol Paris – Tokyo">
+<label class="f">Type</label><select data-f="type">${TYPES.map(t => `<option value="${t[0]}" ${t[0] === (b.type || 'autre') ? 'selected' : ''}>${t[2]} ${t[1]}</option>`).join('')}</select>
+<div class="row" style="align-items:flex-start"><div style="flex:2;min-width:150px"><label class="f">Date</label><input type="date" data-f="date" value="${esc(b.date || '')}"></div><div style="flex:1;min-width:110px"><label class="f">Heure</label><input type="time" data-f="heure" value="${esc(b.heure || '')}"></div></div>
+<label class="f">Référence / numéro</label><input data-f="reference" value="${esc(b.reference || '')}">
+<label class="f">Notes</label><textarea data-f="note">${esc(b.note || '')}</textarea></div>
+<div class="card"><h2>Pièces jointes</h2>${b.fichiersOmis && !fs.length ? '<p class="muted">Les pièces jointes sont restées sur l’autre téléphone (envoi sans billets).</p>' : ''}
+<div class="thumbs">${fs.map(f => f.type === 'application/pdf'
+    ? `<div class="th"><div style="font-size:28px">📄</div><div style="overflow-wrap:anywhere">${esc(f.nom || 'PDF')}</div><a class="btn small" style="margin-top:4px" href="${esc(blobUrl(f))}" target="_blank" rel="noopener">Ouvrir</a><button class="x" data-act="fichier-del" data-id="${b.id}" data-fid="${f.id}" aria-label="Retirer">×</button></div>`
+    : `<div class="th"><a href="#/voir/${b.id}/${f.id}" style="display:block;width:100%;height:100%"><img src="${esc(f.data)}" alt=""></a><button class="x" data-act="fichier-del" data-id="${b.id}" data-fid="${f.id}" aria-label="Retirer">×</button></div>`).join('')}</div>
+<label class="btn file-btn" style="margin-top:10px">📎 Ajouter une photo ou un PDF<input type="file" accept="image/*,application/pdf" multiple data-change="fichiers" data-id="${b.id}"></label></div>
+<button class="btn danger" data-act="supprimer" data-store="billets" data-id="${b.id}" data-to="#/billets">Supprimer ce billet</button>`;
+}
+function vVoir(bid, fid) {
+  const b = byId('billets', bid); const f = b && (b.fichiers || []).find(x => x.id === fid);
+  if (!f) return notFound('#/billets');
+  H(b.titre || 'Billet', { back: '#/billet/' + bid });
+  return `<div class="overlay"><img src="${esc(f.data)}" alt="${esc(f.nom || '')}"><a class="btn fermer" href="#/billet/${bid}">Fermer</a><p class="muted" style="margin-top:10px">Pensez à monter la luminosité pour un QR code.</p></div>`;
+}
+
+/* ----- Budget ----- */
+function vBudget() {
+  H('Budget');
+  const deps = live('depenses').sort((a, b) => cmpFr(b.date || '', a.date || '') || cmpFr(b.createdAt || '', a.createdAt || ''));
+  const taux = SET.taux; let tot = 0, sansTaux = 0; const parCat = {}, parQui = {};
+  for (const d of deps) { const e = eurOf(d); if (e == null) { sansTaux++; continue; } tot += e; parCat[d.cat] = (parCat[d.cat] || 0) + e; if (d.qui) parQui[d.qui] = (parQui[d.qui] || 0) + e; }
+  const max = Math.max(1, ...Object.values(parCat));
+  const dev = LOC.depDevise || 'JPY', cat = LOC.depCat || 'repas';
+  const days = tripDays(); const dDef = todayStr();
+  const vs = (SET.voyageurs || []).filter(Boolean);
+  const groups = new Map(); for (const d of deps) { const k = d.date || ''; if (!groups.has(k)) groups.set(k, []); groups.get(k).push(d); }
+  return `<div class="card"><h2>Convertisseur</h2><div class="conv"><div><label class="f" style="margin-top:0">Yens</label><input id="convY" inputmode="decimal" placeholder="¥"></div><div class="eq">⇄</div><div><label class="f" style="margin-top:0">Euros</label><input id="convE" inputmode="decimal" placeholder="€"></div></div>
+<p class="hint">${taux ? `1 € = ${fmtNum(taux)} ¥${SET.tauxDate ? ' (taux du ' + esc(SET.tauxDate) + ')' : ''}` : 'Indiquez le taux pour convertir.'}</p>
+<div class="row" style="margin-top:8px"><input id="tauxIn" inputmode="decimal" placeholder="1 € = … ¥" value="${taux ? esc(String(taux).replace('.', ',')) : ''}" style="flex:1;min-width:110px"><button class="btn" data-act="taux-set">OK</button><button class="btn" data-act="taux-maj">Taux du jour</button></div></div>
+<div class="card"><h2>Nouvelle dépense</h2>
+<div class="row" style="flex-wrap:nowrap"><input id="depMontant" inputmode="decimal" placeholder="Montant" style="flex:1"><div class="seg" style="margin:0;flex:none">${[['JPY', '¥'], ['EUR', '€']].map(([v, l]) => `<button class="${dev === v ? 'on' : ''}" data-act="pick" data-k="depDevise" data-v="${v}" style="padding:8px 14px">${l}</button>`).join('')}</div></div>
+<div class="chips" style="margin-top:10px">${CATS.map(c => `<button class="chip ${cat === c[0] ? 'on' : ''}" data-act="pick" data-k="depCat" data-v="${c[0]}">${c[2]} ${c[1]}</button>`).join('')}</div>
+${vs.length ? `<div class="chips"><span class="s">Payé par :</span>${vs.map(v => `<button class="chip ${LOC.depQui === v ? 'on' : ''}" data-act="pick" data-k="depQui" data-v="${esc(v)}">${esc(v)}</button>`).join('')}</div>` : ''}
+<div class="row" style="align-items:flex-start"><input id="depNote" placeholder="Note (facultatif)" style="flex:2;min-width:150px"><input id="depDate" type="date" value="${dDef}" style="flex:1;min-width:140px"></div>
+<button class="btn prim full" style="margin-top:10px" data-act="dep-add">Ajouter la dépense</button></div>
+<div class="card"><h2>Total</h2><div class="big">${fmtEur(tot)}</div>${taux ? `<div class="s">soit ${fmtYen(tot * taux)}${days.length ? ' · ' + fmtEur(tot / days.length) + ' par jour sur ' + days.length + ' jours' : ''}</div>` : ''}${sansTaux ? `<p class="hint">${sansTaux} dépense${sansTaux > 1 ? 's' : ''} en yens pas comptée${sansTaux > 1 ? 's' : ''} : indiquez le taux.</p>` : ''}
+${SET.budgetPrevu ? `<div class="kv"><span>Budget prévu</span><b>${fmtEur(SET.budgetPrevu)}</b></div><div class="bar"><i style="width:${Math.min(100, tot / SET.budgetPrevu * 100).toFixed(1)}%;${tot > SET.budgetPrevu ? 'background:var(--shu)' : ''}"></i></div><div class="s">Reste ${fmtEur(SET.budgetPrevu - tot)}</div>` : ''}
+${Object.keys(parCat).length ? '<hr style="border:0;border-top:1px solid var(--trait);margin:12px 0">' + CATS.filter(c => parCat[c[0]]).map(c => `<div class="kv"><span>${c[2]} ${c[1]}</span><b>${fmtEur(parCat[c[0]])}</b></div><div class="bar"><i style="width:${(parCat[c[0]] / max * 100).toFixed(1)}%"></i></div>`).join('') : ''}
+${Object.keys(parQui).length > 1 ? '<hr style="border:0;border-top:1px solid var(--trait);margin:12px 0">' + Object.entries(parQui).map(([q, v]) => `<div class="kv"><span>Payé par ${esc(q)}</span><b>${fmtEur(v)}</b></div>`).join('') : ''}</div>
+${[...groups].map(([k, l]) => `<div class="card"><h2>${k ? esc(dayLabel(k, { weekday: 'long', day: 'numeric', month: 'long' })) : 'Sans date'} <span class="s">· ${fmtEur(l.reduce((s, d) => s + (eurOf(d) || 0), 0))}</span></h2>${l.map(d => `<a class="item lien-plein" href="#/depense/${d.id}"><div style="font-size:20px;width:26px;text-align:center">${catLabel(d.cat)[2]}</div><div class="corps"><div class="t">${d.devise === 'EUR' ? fmtEur(d.montant) : fmtYen(d.montant)}${d.devise !== 'EUR' && eurOf(d) != null ? ` <span class="s">≈ ${fmtEur(eurOf(d))}</span>` : ''}</div><div class="s">${[catLabel(d.cat)[1], d.note, d.qui].filter(Boolean).map(esc).join(' · ')}</div></div></a>`).join('')}</div>`).join('')}`;
+}
+function vDepense(id) {
+  const d = byId('depenses', id); if (!d || d.deleted) return notFound('#/budget');
+  H('Dépense', { back: '#/budget' });
+  return `<div class="card" data-rec="depenses:${d.id}">
+<div class="row" style="align-items:flex-start"><div style="flex:2;min-width:140px"><label class="f" style="margin-top:0">Montant</label><input data-f="montant" data-type="num" inputmode="decimal" value="${esc(String(d.montant).replace('.', ','))}"></div><div style="flex:1;min-width:100px"><label class="f" style="margin-top:0">Devise</label><select data-f="devise"><option value="JPY" ${d.devise !== 'EUR' ? 'selected' : ''}>¥ yen</option><option value="EUR" ${d.devise === 'EUR' ? 'selected' : ''}>€ euro</option></select></div></div>
+<label class="f">Catégorie</label><select data-f="cat">${CATS.map(c => `<option value="${c[0]}" ${c[0] === d.cat ? 'selected' : ''}>${c[2]} ${c[1]}</option>`).join('')}</select>
+<label class="f">Date</label><input type="date" data-f="date" value="${esc(d.date || '')}">
+${voyageurSelect('qui', d.qui, 'Payé par')}
+<label class="f">Note</label><input data-f="note" value="${esc(d.note || '')}"></div>
+<button class="btn danger" data-act="supprimer" data-store="depenses" data-id="${d.id}" data-to="#/budget">Supprimer cette dépense</button>`;
+}
+
+/* ----- Aujourd'hui (mode voyage) ----- */
+function vAujourdhui() {
+  const days = tripDays(), t = todayStr();
+  if (!days.length) { H('Aujourd’hui'); return `<div class="card info"><h2>Dates du séjour</h2><p class="muted">Indiquez les dates pour voir la journée.</p><a class="btn prim" href="#/reglages">Régler les dates</a></div>`; }
+  const d = days.includes(t) ? t : (t < days[0] ? days[0] : days[days.length - 1]); const k = days.indexOf(d);
+  H('Jour ' + (k + 1) + ' sur ' + days.length, { eyebrow: dayLabel(d, { weekday: 'long', day: 'numeric', month: 'long' }) });
+  const j = jourRec(d) || {}; const st = stepsOf(d); const bil = live('billets').filter(b => b.date === d);
+  const dep = live('depenses').filter(x => x.date === d).reduce((s, x) => s + (eurOf(x) || 0), 0); const mu = mapDayUrl(st);
+  const dem = days[k + 1]; const stDem = dem ? stepsOf(dem) : [];
+  return `${t !== d ? `<p class="muted">${t < d ? 'Le voyage n’a pas commencé : voici le premier jour.' : 'Le voyage est terminé : voici le dernier jour.'}</p>` : ''}${rappelBanner()}
+${j.ville || j.nuit || j.note ? `<div class="card"><div class="t">${esc([j.ville, j.nuit ? 'nuit : ' + j.nuit : ''].filter(Boolean).join(' · '))}</div>${j.note ? `<div class="s">${esc(j.note)}</div>` : ''}</div>` : ''}
+<div class="card"><h2>Programme</h2>${st.length ? st.map(e => `<div class="item"><a class="corps lien-plein" href="#/etape/${e.id}"><div class="t">${e.heure ? `<span style="color:var(--shu)">${esc(e.heure)}</span> · ` : ''}${esc(e.titre || '(sans titre)')}</div><div class="s">${[e.ville, e.horaires, e.reservation ? '🎟 ' + e.reservation : ''].filter(Boolean).map(esc).join(' · ')}</div>${e.note ? `<div class="s" style="margin-top:2px">${esc(firstLine(e.note))}</div>` : ''}</a><div style="display:flex;flex-direction:column;gap:4px">${e.adresseJa || e.adresse ? `<a class="btn small" href="#/taxi/${e.id}" aria-label="Taxi">🚕</a>` : ''}<a class="btn small" href="${esc(mapUrl(e))}" target="_blank" rel="noopener" aria-label="Carte">🗺</a></div></div>`).join('') : '<div class="empty">Journée libre.</div>'}${mu ? `<a class="btn full" style="margin-top:8px" href="${esc(mu)}" target="_blank" rel="noopener">Carte du jour ↗</a>` : ''}</div>
+${bil.length ? `<div class="card"><h2>Billets du jour</h2>${bil.map(billetItem).join('')}</div>` : ''}
+<div class="card"><div class="row" style="justify-content:space-between"><div><div class="s">Dépenses du jour</div><div class="big">${fmtEur(dep)}</div></div><a class="btn" href="#/budget">+ Dépense</a></div></div>
+${dem ? `<a class="card lien-plein" href="#/jour/${dem}"><div class="s">Demain · ${esc(dayLabel(dem))}</div><div class="t">${esc(stDem.map(e => e.titre).filter(Boolean).slice(0, 3).join(' · ') || 'Rien de prévu')}</div></a>` : ''}`;
+}
+
+/* ----- Plus, échange, sauvegardes, réglages ----- */
+function vPlus() {
+  H('Plus');
+  const v = isVoyage();
+  const links = (v ? [['#/idees', 'Idées à voir', 'Les liens de la préparation'], ['#/rappels', 'Réservations', 'Ce qui se réserve à l’avance']] : [['#/budget', 'Budget et convertisseur', 'Dépenses en yens, total en euros']])
+    .concat([['#/echange', 'Échanger avec l’autre téléphone', 'Envoyer ou recevoir les mises à jour'], ['#/sauvegardes', 'Sauvegardes', 'Copies automatiques, fichier de sauvegarde'], ['#/reglages', 'Réglages', 'Dates, prénoms, mode voyage']]);
+  return `<div class="card">${links.map(([h, t, s]) => `<a class="item lien-plein" href="${h}"><div class="corps"><div class="t">${t}</div><div class="s">${s}</div></div><span class="muted">›</span></a>`).join('')}</div>
+<div class="card"><div class="s">Version ${APP_VERSION}</div><button class="btn small" style="margin-top:8px" data-act="maj-check">Rechercher une mise à jour</button></div>`;
+}
+function vEchange() {
+  H('Échange', { back: '#/plus' });
+  const nb = live('billets').reduce((s, b) => s + (b.fichiers || []).length, 0);
+  return `<div class="card"><h2>Envoyer à l’autre téléphone</h2><p class="muted">L’appli prépare un fichier avec toutes vos fiches. Envoyez-le par WhatsApp, Messages ou mail, puis ouvrez « Recevoir » sur l’autre téléphone. Rien n’est effacé : seule la version la plus récente de chaque fiche est gardée.</p>
+<label class="check"><input type="checkbox" id="avecBillets" ${LOC.avecBillets ? 'checked' : ''}> Avec les pièces jointes des billets${nb ? ' (' + nb + ')' : ''}</label>
+<button class="btn prim full" style="margin-top:12px" data-act="export">Préparer et envoyer</button>${LOC.lastExport ? `<p class="hint">Dernier envoi : ${esc(new Date(LOC.lastExport).toLocaleString('fr-FR'))}</p>` : ''}</div>
+<div class="card"><h2>Recevoir</h2><p class="muted">Choisissez le fichier reçu de l’autre téléphone. Une copie de sécurité est faite avant.</p>
+<label class="btn file-btn full">📥 Choisir le fichier reçu<input type="file" accept=".json,application/json,text/plain" data-change="import"></label>
+<div id="importPreview">${PENDING ? importPreviewHTML() : ''}</div>${LOC.lastImport ? `<p class="hint">Dernière réception : ${esc(new Date(LOC.lastImport).toLocaleString('fr-FR'))}</p>` : ''}</div>`;
+}
+const STORE_NOMS = { idees: 'idées', etapes: 'étapes', jours: 'journées', rappels: 'réservations', billets: 'billets', depenses: 'dépenses' };
+function importPreviewHTML() {
+  const mp = PENDING.mp;
+  const lignes = DATA_STORES.filter(s => mp.plan[s].add.length || mp.plan[s].upd.length).map(s => `<div class="kv"><span>${STORE_NOMS[s]}</span><span>${mp.plan[s].add.length} nouvelle${mp.plan[s].add.length > 1 ? 's' : ''} · ${mp.plan[s].upd.length} mise${mp.plan[s].upd.length > 1 ? 's' : ''} à jour</span></div>`).join('');
+  return `<div class="card info" style="margin-top:12px"><div class="t">Fichier du ${esc(new Date(PENDING.p.exportedAt).toLocaleString('fr-FR'))}${PENDING.p.appareil ? ' · ' + esc(PENDING.p.appareil) : ''}</div>${lignes || '<p class="muted">Rien de nouveau : vous êtes déjà à jour.</p>'}${mp.set ? '<div class="s">Les réglages (dates, prénoms, taux) seront aussi mis à jour.</div>' : ''}
+${mp.nAdd || mp.nUpd || mp.set ? '<button class="btn prim full" style="margin-top:10px" data-act="import-go">Importer</button>' : ''}<button class="btn ghost full" style="margin-top:6px" data-act="import-annuler">Annuler</button></div>`;
+}
+function vSauvegardes() {
+  H('Sauvegardes', { back: '#/plus' });
+  setTimeout(async () => {
+    const el = $('#saveList'); if (!el) return;
+    const all = (await getAll('sauvegardes')).sort((a, b) => cmpFr(b.at, a.at));
+    el.innerHTML = all.length ? all.map(b => { const n = DATA_STORES.reduce((s, k) => s + ((b.payload.data[k] || []).filter(r => !r.deleted).length), 0); return `<div class="item"><div class="corps"><div class="t">${esc(new Date(b.at).toLocaleString('fr-FR'))}</div><div class="s">${esc(b.raison)} · ${n} fiches</div></div><div class="row"><button class="btn small" data-act="backup-export" data-id="${b.id}">Fichier</button><button class="btn small" data-act="backup-restore" data-id="${b.id}">Restaurer</button></div></div>`; }).join('') : '<div class="empty">Aucune copie pour l’instant : elles se font avant chaque réception ou restauration.</div>';
+  }, 0);
+  return `<div class="card"><h2>Fichier de sauvegarde</h2><p class="muted">Un fichier complet (avec les billets) à garder dans vos fichiers ou sur le Drive. Il se réimporte comme un fichier reçu.</p><button class="btn prim full" data-act="backup-file">Créer le fichier de sauvegarde</button></div>
+<div class="card"><h2>Copies automatiques</h2><p class="muted">Les ${MAX_BACKUPS} dernières copies faites sur ce téléphone avant une réception ou une restauration.</p><div id="saveList"><div class="empty">Chargement…</div></div></div>`;
+}
+function vReglages() {
+  H('Réglages', { back: '#/plus' });
+  const vs = (SET.voyageurs || []).slice(); while (vs.length < 2) vs.push('');
+  const bad = validYmd(SET.debut) && validYmd(SET.fin) && SET.fin < SET.debut;
+  return `<div class="card"><h2>Séjour au Japon</h2><p class="muted">Premier et dernier jour sur place. Modifiables à tout moment : les étapes ne sont jamais perdues.</p>
+<div class="row" style="align-items:flex-start"><div style="flex:1;min-width:140px"><label class="f">Premier jour</label><input type="date" data-set="debut" value="${esc(SET.debut || '')}"></div><div style="flex:1;min-width:140px"><label class="f">Dernier jour</label><input type="date" data-set="fin" value="${esc(SET.fin || '')}"></div></div>${bad ? '<p class="hint" style="color:var(--shu)">Le dernier jour est avant le premier.</p>' : ''}</div>
+<div class="card"><h2>Voyageurs</h2>${vs.map((v, k) => `<label class="f">Prénom ${k + 1}</label><input data-set="voyageur" data-idx="${k}" value="${esc(v)}" autocomplete="off">`).join('')}</div>
+<div class="card"><h2>Budget</h2><label class="f" style="margin-top:0">Budget prévu sur place (€)</label><input data-set="budgetPrevu" inputmode="decimal" value="${SET.budgetPrevu ? esc(String(SET.budgetPrevu).replace('.', ',')) : ''}"></div>
+<div class="card"><h2>Ce téléphone</h2><label class="f" style="margin-top:0">Nom de ce téléphone (pour les fichiers d’échange)</label><input data-loc="appareil" value="${esc(LOC.appareil || '')}" placeholder="Ex. : iPhone de …">
+<label class="f">Écran d’accueil</label>${seg('mode', [['auto', 'Automatique'], ['prep', 'Préparation'], ['voyage', 'Voyage']], LOC.mode || 'auto', 'mode')}
+<p class="hint">Automatique : le mode voyage (journée du jour, billets, budget) s’affiche la veille du départ et pendant le séjour.</p></div>
+<div class="card"><h2>Stockage</h2><div id="stockage" class="s">…</div><button class="btn small" style="margin-top:8px" data-act="persist">Protéger mes données</button></div>`;
+}
+
+/* =====================================================================
+   Navigation
+   ===================================================================== */
+const ICONS = {
+  bulb: '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.6 10.8c.7.5 1.1 1.3 1.1 2.1V16h5v-.1c0-.8.4-1.6 1.1-2.1A6 6 0 0 0 12 3z"/>',
+  pin: '<path d="M12 21s-6.5-5.6-6.5-10.5a6.5 6.5 0 0 1 13 0C18.5 15.4 12 21 12 21z"/><circle cx="12" cy="10.5" r="2.3"/>',
+  bell: '<path d="M6 16v-5a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>',
+  ticket: '<path d="M3 7.5A1.5 1.5 0 0 1 4.5 6h15A1.5 1.5 0 0 1 21 7.5V10a2 2 0 0 0 0 4v2.5a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 16.5V14a2 2 0 0 0 0-4z"/><path d="M15 6.5v11" stroke-dasharray="1.6 2"/>',
+  dots: '<circle cx="5.5" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="18.5" cy="12" r="1.4"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/>',
+  yen: '<circle cx="12" cy="12" r="9"/><path d="M8.5 7 12 12l3.5-5M12 12v5.5M9 12.5h6M9 15h6"/>'
+};
+function tabOf(h) {
+  const r = (h.match(/^#\/([a-z]+)/) || [])[1] || '';
+  return { idee: 'idees', recu: 'idees', jour: 'itineraire', etape: 'itineraire', taxi: 'itineraire', rappel: 'rappels', billet: 'billets', voir: 'billets', depense: 'budget', echange: 'plus', reglages: 'plus', sauvegardes: 'plus' }[r] || r;
+}
+function navHTML(h) {
+  const v = isVoyage(); let tab = tabOf(h);
+  const items = v ? [['aujourdhui', 'Aujourd’hui', 'sun'], ['itineraire', 'Itinéraire', 'pin'], ['billets', 'Billets', 'ticket'], ['budget', 'Budget', 'yen'], ['plus', 'Plus', 'dots']]
+    : [['idees', 'Idées', 'bulb'], ['itineraire', 'Itinéraire', 'pin'], ['rappels', 'Réserver', 'bell'], ['billets', 'Billets', 'ticket'], ['plus', 'Plus', 'dots']];
+  if (!items.some(i => i[0] === tab)) tab = 'plus';
+  const nIdees = live('idees').filter(i => (i.statut || 'a-trier') === 'a-trier').length, nR = rappelsUrgents().length;
+  const past = { idees: v ? 0 : nIdees, rappels: nR };
+  return items.map(([k, l, ic]) => `<a href="#/${k}" class="${tab === k ? 'on' : ''}" data-tab="${k}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONS[ic]}</svg>${l}${past[k] ? `<span class="pastille">${past[k]}</span>` : ''}</a>`).join('');
+}
+const ROUTES = [
+  [/^#\/idees$/, vIdees], [/^#\/idee\/([\w-]+)$/, vIdee], [/^#\/recu$/, vRecu],
+  [/^#\/itineraire$/, vItineraire], [/^#\/jour\/([\d-]+)$/, vJour], [/^#\/etape\/([\w-]+)$/, vEtape], [/^#\/taxi\/([\w-]+)$/, vTaxi],
+  [/^#\/rappels$/, vRappels], [/^#\/rappel\/([\w-]+)$/, vRappel],
+  [/^#\/billets$/, vBillets], [/^#\/billet\/([\w-]+)$/, vBillet], [/^#\/voir\/([\w-]+)\/([\w-]+)$/, vVoir],
+  [/^#\/budget$/, vBudget], [/^#\/depense\/([\w-]+)$/, vDepense],
+  [/^#\/aujourdhui$/, vAujourdhui], [/^#\/plus$/, vPlus], [/^#\/echange$/, vEchange], [/^#\/sauvegardes$/, vSauvegardes], [/^#\/reglages$/, vReglages]
+];
+function render() {
+  if (!db) return;
+  let h = location.hash;
+  const route = ROUTES.find(([re]) => re.test(h));
+  if (!route) { h = isVoyage() ? '#/aujourdhui' : '#/idees'; history.replaceState(null, '', location.pathname + h); return render(); }
+  let html;
+  try { html = route[1](...h.match(route[0]).slice(1)); }
+  catch (err) { console.error(err); html = `<div class="card alerte">Erreur d’affichage : ${esc(err.message)}</div>`; }
+  view.innerHTML = html; nav.innerHTML = navHTML(h);
+  if (h !== LAST_ROUTE) { window.scrollTo(0, 0); LAST_ROUTE = h; }
+  afterRender();
+}
+function afterRender() {
+  const cy = $('#convY'), ce = $('#convE');
+  if (cy && ce) {
+    cy.addEventListener('input', () => { const n = parseNum(cy.value); ce.value = SET.taux && cy.value !== '' && isFinite(n) ? (Math.round(n / SET.taux * 100) / 100).toLocaleString('fr-FR') : ''; });
+    ce.addEventListener('input', () => { const n = parseNum(ce.value); cy.value = SET.taux && ce.value !== '' && isFinite(n) ? Math.round(n * SET.taux).toLocaleString('fr-FR') : ''; });
+  }
+  const st = $('#stockage');
+  if (st && navigator.storage && navigator.storage.estimate) {
+    Promise.all([navigator.storage.estimate(), navigator.storage.persisted ? navigator.storage.persisted() : Promise.resolve(false)]).then(([e, p]) => {
+      st.textContent = 'Utilisé : ' + (e.usage / 1048576).toFixed(1) + ' Mo' + (e.quota ? ' sur ' + Math.round(e.quota / 1048576) + ' Mo disponibles' : '') + ' · ' + (p ? 'données protégées contre le nettoyage automatique' : 'protection non accordée (normal sur iPhone : l’appli de l’écran d’accueil garde ses données)');
+    }).catch(() => { st.textContent = 'Indisponible'; });
+  } else if (st) st.textContent = 'Indisponible sur ce navigateur';
+}
+
+/* =====================================================================
+   Actions (délégation)
+   ===================================================================== */
+const ACTS = {
+  nav: a => go(a.dataset.to),
+  'install-vu': () => { LOC.installVu = 1; saveLoc(); render(); },
+  pick: a => { const k = a.dataset.k, v = a.dataset.v; LOC[k] = LOC[k] === v && k !== 'depDevise' && k !== 'depCat' ? '' : v; saveLoc(); a.parentNode.querySelectorAll('[data-act="pick"][data-k="' + k + '"]').forEach(b => b.classList.toggle('on', b.dataset.v === LOC[k])); },
+  mode: a => { LOC.mode = a.dataset.v; saveLoc(); render(); },
+  'filtre-idees': a => { LOC.ideeFiltre = a.dataset.v; LOC.ideeVille = ''; saveLoc(); render(); },
+  'idee-ville': a => { LOC.ideeVille = a.dataset.v; saveLoc(); render(); },
+  async coller() {
+    const box = $('#pasteBox');
+    try { const t = navigator.clipboard && await navigator.clipboard.readText(); if (t) box.value = (box.value ? box.value + '\n' : '') + t; else toast('Le presse-papiers est vide'); }
+    catch (e) { box.focus(); toast('Appuyez longuement dans la zone, puis « Coller »'); }
+  },
+  async ranger() {
+    const box = $('#pasteBox'); const r = await addIdeas(box.value, LOC.par || '');
+    if (!r.ajout && !r.doublons) { toast('Rien à ranger', true); return; }
+    box.value = ''; LOC.ideeFiltre = 'a-trier'; saveLoc(); render();
+    toast(r.ajout ? r.ajout + ' idée' + (r.ajout > 1 ? 's' : '') + ' ajoutée' + (r.ajout > 1 ? 's' : '') + (r.doublons ? ' · ' + r.doublons + ' déjà là' : '') : 'Déjà dans vos idées');
+  },
+  async 'idee-statut'(a) {
+    const i = byId('idees', a.dataset.id); if (!i) return; i.statut = a.dataset.v; await saveRec('idees', i);
+    if (a.dataset.v === 'garde' && !a.dataset.reste) { go('#/idee/' + i.id); toast('Notez l’essentiel, puis ajoutez-la à l’itinéraire'); } else render();
+  },
+  async 'titre-auto'(a) {
+    const i = byId('idees', a.dataset.id); const u = safeUrl(i && i.url); if (!u) return;
+    const ep = i.source === 'tiktok' ? 'https://www.tiktok.com/oembed?url=' : 'https://www.youtube.com/oembed?format=json&url=';
+    a.disabled = true;
+    try {
+      const ctl = new AbortController(); const to = setTimeout(() => ctl.abort(), 9000);
+      const r = await fetch(ep + encodeURIComponent(u), { signal: ctl.signal, credentials: 'omit', referrerPolicy: 'no-referrer' }); clearTimeout(to);
+      if (!r.ok) throw new Error(r.status); const j = await r.json(); const t = String(j.title || '').trim().slice(0, 300);
+      if (!t) throw new Error('vide');
+      i.titre = t; await saveRec('idees', i); render(); toast('Titre récupéré');
+    } catch (e) { a.disabled = false; toast('Titre indisponible pour ce lien : notez quelques mots', true); }
+  },
+  async 'idee-etape'(a) {
+    const i = byId('idees', a.dataset.id); if (!i) return;
+    const e = { id: uid('e'), titre: i.titre || firstLine(i.note) || '', ville: i.ville || '', note: i.note || '', lien: i.url || '', ideeId: i.id, jour: null, ordre: nextOrdre(null) };
+    await saveRec('etapes', e); i.etapeId = e.id; i.statut = 'garde'; await saveRec('idees', i);
+    go('#/etape/' + e.id); toast('Étape créée : choisissez le jour');
+  },
+  async 'recu-ranger'(a) {
+    const r = await addIdeas(a.dataset.u, LOC.par || '', { ville: ($('#recuVille').value || '').trim(), note: ($('#recuNote').value || '').trim() });
+    RECU = null; toast(r.ajout ? 'Idée rangée' : 'Déjà dans vos idées'); LOC.ideeFiltre = 'a-trier'; saveLoc(); go('#/idees');
+  },
+  'recu-voir': a => { RECU = null; go('#/idee/' + a.dataset.id); },
+  'recu-annuler': () => { RECU = null; go('#/idees'); },
+  async 'etape-new'(a) {
+    const jour = a.dataset.jour || null; const e = { id: uid('e'), titre: '', ville: (jour && jourRec(jour) && jourRec(jour).ville) || '', jour, ordre: nextOrdre(jour) };
+    await saveRec('etapes', e); go('#/etape/' + e.id);
+  },
+  async deplacer(a) {
+    const e = byId('etapes', a.dataset.id); if (!e) return; const l = stepsOf(e.jour); const k = l.indexOf(e), j = k + Number(a.dataset.dir);
+    if (j < 0 || j >= l.length) return; l.splice(k, 1); l.splice(j, 0, e);
+    for (let n = 0; n < l.length; n++) if (l[n].ordre !== n + 1) { l[n].ordre = n + 1; await saveRec('etapes', l[n]); }
+    render();
+  },
+  async supprimer(a) {
+    if (!confirm('Supprimer ? (une copie reste dans les sauvegardes)')) return;
+    await softDelete(a.dataset.store, a.dataset.id); toast('Supprimé'); go(a.dataset.to || '#/');
+  },
+  async 'rappel-add'(a) {
+    const m = MODELES[a.dataset.v]; const r = { id: uid('r'), modele: a.dataset.v, titre: m.titre, lien: m.lien, statut: 'a-faire', dateVisite: null, etapeId: '', note: '' };
+    await saveRec('rappels', r); go('#/rappel/' + r.id);
+  },
+  async 'rappel-statut'(a) { const r = byId('rappels', a.dataset.id); r.statut = a.dataset.v; await saveRec('rappels', r); render(); },
+  async 'rappel-ics'(a) { const r = byId('rappels', a.dataset.id); const t = rappelIcs(r); if (!t) { toast('Date inconnue', true); return; } await shareOrDownload('reserver-' + (slug(r.titre) || 'japon') + '.ics', 'text/calendar', t); },
+  async 'billet-new'() { const b = { id: uid('b'), titre: '', type: 'autre', date: null, heure: '', reference: '', note: '', fichiers: [] }; await saveRec('billets', b); go('#/billet/' + b.id); },
+  async 'fichier-del'(a, ev) {
+    ev.preventDefault(); if (!confirm('Retirer cette pièce jointe ?')) return;
+    const b = byId('billets', a.dataset.id); const fid = a.dataset.fid;
+    b.fichiers = (b.fichiers || []).filter(f => f.id !== fid); b.fichiersRetires = [...new Set((b.fichiersRetires || []).concat(fid))];
+    await saveRec('billets', b); render();
+  },
+  async 'dep-add'() {
+    const m = parseNum($('#depMontant').value); if (!isFinite(m) || m <= 0) { toast('Indiquez le montant', true); return; }
+    const d = { id: uid('d'), montant: m, devise: LOC.depDevise || 'JPY', cat: LOC.depCat || 'repas', note: $('#depNote').value.trim(), qui: LOC.depQui || '', date: $('#depDate').value || todayStr(), taux: SET.taux || null };
+    await saveRec('depenses', d); render(); toast('Dépense ajoutée');
+  },
+  async 'taux-set'() { const n = parseNum($('#tauxIn').value); if (!isFinite(n) || n <= 0) { toast('Taux invalide', true); return; } SET.taux = n; SET.tauxDate = new Date().toLocaleDateString('fr-FR'); await saveSettings(); render(); toast('Taux enregistré'); },
+  async 'taux-maj'(a) {
+    a.disabled = true;
+    const urls = ['https://api.frankfurter.dev/v1/latest?base=EUR&symbols=JPY', 'https://api.frankfurter.app/latest?from=EUR&to=JPY'];
+    for (const u of urls) {
+      try { const ctl = new AbortController(); const to = setTimeout(() => ctl.abort(), 8000); const r = await fetch(u, { signal: ctl.signal, credentials: 'omit' }); clearTimeout(to); const j = await r.json(); const n = j && j.rates && j.rates.JPY; if (n > 0) { SET.taux = Math.round(n * 100) / 100; SET.tauxDate = j.date ? parseYmd(j.date).toLocaleDateString('fr-FR') : new Date().toLocaleDateString('fr-FR'); await saveSettings(); render(); toast('Taux mis à jour'); return; } } catch (e) { /* source suivante */ }
+    }
+    a.disabled = false; toast('Pas de réseau : saisissez le taux', true);
+  },
+  async export() {
+    const avec = !!($('#avecBillets') && $('#avecBillets').checked); LOC.avecBillets = avec;
+    const txt = JSON.stringify(buildPayload(avec));
+    const r = await shareOrDownload('japon-2027-' + (slug(LOC.appareil) ? slug(LOC.appareil) + '-' : '') + stamp() + '.json', 'application/json', txt);
+    if (r !== 'annule') { LOC.lastExport = now(); saveLoc(); render(); toast(r === 'partage' ? 'Fichier envoyé' : 'Fichier enregistré'); }
+  },
+  'import-annuler': () => { PENDING = null; render(); },
+  async 'import-go'(a) {
+    if (!PENDING) return; a.disabled = true;
+    try { await createBackup('Avant réception d’un fichier'); }
+    catch (e) { toast('Copie de sécurité impossible (stockage plein ?) : import annulé', true); a.disabled = false; return; }
+    try { const mp = mergePlan(PENDING.p); await applyPlan(mp); PENDING = null; LOC.lastImport = now(); saveLoc(); render(); toast((mp.nAdd + mp.nUpd) + ' fiche' + (mp.nAdd + mp.nUpd > 1 ? 's' : '') + ' reçue' + (mp.nAdd + mp.nUpd > 1 ? 's' : '')); }
+    catch (e) { a.disabled = false; toast('Import impossible : ' + e.message, true); }
+  },
+  async 'backup-file'() { await shareOrDownload('japon-2027-sauvegarde-' + stamp() + '.json', 'application/json', JSON.stringify(buildPayload(true))); },
+  async 'backup-export'(a) { const b = (await getAll('sauvegardes')).find(x => x.id === a.dataset.id); if (b) await shareOrDownload('japon-2027-copie-' + b.at.slice(0, 16).replace(/[-:T]/g, '') + '.json', 'application/json', JSON.stringify(b.payload)); },
+  async 'backup-restore'(a) {
+    const b = (await getAll('sauvegardes')).find(x => x.id === a.dataset.id); if (!b) return;
+    if (!confirm('Revenir à la copie du ' + new Date(b.at).toLocaleString('fr-FR') + ' ? L’état actuel est copié avant.')) return;
+    try { validatePayload(b.payload); await createBackup('Avant restauration'); } catch (e) { toast('Restauration annulée : ' + e.message, true); return; }
+    const t = db.transaction([...DATA_STORES, 'meta'], 'readwrite');
+    for (const s of DATA_STORES) { const os = t.objectStore(s); os.clear(); for (const r of (b.payload.data[s] || [])) os.put(r); }
+    t.objectStore('meta').put(Object.assign({}, SET, pickShared(b.payload.settings || {}), { id: 'settings' }));
+    try { await txDone(t); await reloadAll(); render(); toast('Copie restaurée'); } catch (e) { toast('Restauration impossible : ' + e.message, true); }
+  },
+  async persist() { try { const ok = navigator.storage && navigator.storage.persist && await navigator.storage.persist(); toast(ok ? 'Données protégées' : 'Protection refusée par le navigateur'); render(); } catch (e) { toast('Indisponible', true); } },
+  maj: () => { if (SW.waiting) SW.waiting.postMessage('skipWaiting'); else location.reload(); },
+  async 'maj-check'() { if (!SW.reg) { toast('Mise à jour indisponible ici'); return; } try { await SW.reg.update(); if (!SW.reg.waiting && !SW.reg.installing) toast('Vous avez la dernière version'); } catch (e) { toast('Pas de réseau', true); } }
+};
+document.addEventListener('click', e => {
+  const b = e.target.closest('#back'); if (b) { go(b.dataset.to); return; }
+  const a = e.target.closest('[data-act]'); if (!a || a.disabled) return;
+  const f = ACTS[a.dataset.act]; if (!f) return;
+  if (a.tagName === 'BUTTON' || a.dataset.act === 'nav') e.preventDefault();
+  Promise.resolve(f(a, e)).catch(err => { console.error(err); toast('Erreur : ' + (err && err.message || err), true); });
+});
+const CHG = {
+  async fichiers(el) {
+    const b = byId('billets', el.dataset.id); const files = [...el.files]; el.value = ''; if (!b || !files.length) return;
+    toast('Ajout en cours…'); let n = 0;
+    for (const f of files) { try { (b.fichiers = b.fichiers || []).push(await lireFichier(f)); n++; } catch (e) { toast(e.message, true); } }
+    if (n) { delete b.fichiersOmis; await saveRec('billets', b); render(); toast(n + ' pièce' + (n > 1 ? 's' : '') + ' ajoutée' + (n > 1 ? 's' : '')); }
+  },
+  async import(el) {
+    const f = el.files[0]; el.value = ''; if (!f) return;
+    try { if (f.size > 200e6) throw new Error('Fichier trop lourd.'); let p; try { p = JSON.parse(await f.text()); } catch (e) { throw new Error('Ce fichier n’est pas lisible.'); } validatePayload(p); PENDING = { p, mp: mergePlan(p) }; render(); }
+    catch (e) { PENDING = null; render(); toast(e.message, true); }
+  }
+};
+document.addEventListener('change', async e => {
+  const el = e.target;
+  try {
+    if (el.matches('[data-f]')) {
+      const box = el.closest('[data-rec]'); if (!box) return;
+      const [store, id] = box.dataset.rec.split(':'); let rec = byId(store, id);
+      if (!rec) { if (store === 'jours') rec = { id, date: box.dataset.date }; else return; }
+      const f = el.dataset.f; let v = el.type === 'checkbox' ? el.checked : el.value;
+      if (el.dataset.type === 'num') { v = parseNum(v); if (!isFinite(v)) { toast('Nombre invalide', true); render(); return; } }
+      else if (typeof v === 'string') v = v.trim();
+      rec[f] = v; if (HOOKS[store + '.' + f]) await HOOKS[store + '.' + f](rec);
+      await saveRec(store, rec); toast('Enregistré');
+      if (el.dataset.rerender) render(); else nav.innerHTML = navHTML(location.hash);
+      return;
+    }
+    if (el.matches('[data-set]')) {
+      const k = el.dataset.set; const v = el.value.trim();
+      if (k === 'voyageur') { const vs = (SET.voyageurs || []).slice(); vs[Number(el.dataset.idx)] = v; SET.voyageurs = vs; }
+      else if (k === 'budgetPrevu') { const n = parseNum(v); SET.budgetPrevu = v && isFinite(n) && n > 0 ? n : null; }
+      else SET[k] = v || null;
+      await saveSettings(); toast('Enregistré'); $('#eyebrow').textContent = defaultEyebrow(); nav.innerHTML = navHTML(location.hash);
+      return;
+    }
+    if (el.matches('[data-loc]')) { LOC[el.dataset.loc] = el.value.trim(); saveLoc(); toast('Enregistré'); return; }
+    if (el.matches('[data-change]')) await CHG[el.dataset.change](el, e);
+  } catch (err) { console.error(err); toast('Erreur : ' + (err && err.message || err), true); }
+});
+// Avant de quitter l'appli, on valide le champ en cours (iPhone : l'appli peut être fermée sans « blur »).
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && document.activeElement && document.activeElement.matches('input,textarea,select')) document.activeElement.blur(); });
+window.addEventListener('hashchange', render);
+
+/* =====================================================================
+   Mises à jour (service worker) et démarrage
+   ===================================================================== */
+const SW = { reg: null, waiting: null };
+function registerSW() {
+  if (!('serviceWorker' in navigator) || !/^https:|^http:\/\/(localhost|127\.0\.0\.1)/.test(location.href)) return;
+  const hadController = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.register('service-worker.js').then(reg => {
+    SW.reg = reg;
+    const check = () => { if (reg.waiting && navigator.serviceWorker.controller) { SW.waiting = reg.waiting; $('#maj').hidden = false; } };
+    check();
+    reg.addEventListener('updatefound', () => { const nw = reg.installing; if (nw) nw.addEventListener('statechange', () => { if (nw.state === 'installed') check(); }); });
+  }).catch(() => {});
+  let reloading = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => { if (!hadController || reloading) return; reloading = true; location.reload(); });
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && SW.reg) SW.reg.update().catch(() => {}); });
+}
+async function start() {
+  try { LOC = JSON.parse(localStorage.getItem(LOCAL_KEY) || '{}') || {}; } catch (e) { LOC = {}; }
+  try { db = await openDB(); await reloadAll(); }
+  catch (e) { view.innerHTML = `<div class="card alerte"><h2>Stockage indisponible</h2><p class="muted">${esc(e && e.message || e)}. En navigation privée, l’appli ne peut rien garder.</p></div>`; return; }
+  // Menu « Partager » d'Android : l'appli est ouverte avec ?lien=…&texte=…&titre=…
+  const q = new URLSearchParams(location.search);
+  if (q.has('lien') || q.has('texte') || q.has('titre')) { RECU = { titre: q.get('titre') || '', texte: q.get('texte') || '', lien: q.get('lien') || '' }; history.replaceState(null, '', location.pathname + '#/recu'); }
+  if (navigator.storage && navigator.storage.persisted) navigator.storage.persisted().then(p => { if (!p && navigator.storage.persist) navigator.storage.persist().catch(() => {}); }).catch(() => {});
+  render(); registerSW();
+}
+start();
+</script>
+</body>
+</html>

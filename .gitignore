@@ -1,0 +1,9 @@
+# Aucune donnée ne doit être versionnée : fichiers d'échange, sauvegardes et exports restent sur les téléphones.
+*.json
+!package.json
+*.csv
+*.xlsx
+*.xls
+*.ics
+node_modules/
+.DS_Store
