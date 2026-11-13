@@ -78,11 +78,13 @@ const mainFile = () => [...drive.values()].find(f => f.name === 'japon-2027-sync
 async function phone(browser, base, prof, errors, nom) {
   const ctx = await browser.newContext(prof); await fakeGoogle(ctx, base);
   await ctx.addInitScript(n => { window.__driveDelay = 150; if (!localStorage.getItem('japon-2027-local')) localStorage.setItem('japon-2027-local', JSON.stringify({ installVu: 1, appareil: n })); }, nom);
-  const p = await ctx.newPage();
+  const p = await ctx.newPage(); const journal = [];
+  p.on('requestfailed', r => journal.push('échec ' + r.method() + ' ' + r.url().slice(0, 90) + ' ' + (r.failure() || {}).errorText));
+  p.on('console', m => journal.push('console ' + m.type() + ' ' + m.text().slice(0, 160)));
   p.on('pageerror', e => errors.push(nom + ' : ' + e.message));
   p.on('dialog', d => d.accept());
   await p.goto(base + '/'); await p.waitForSelector('nav#nav a');
-  return { ctx, p };
+  return { ctx, p, journal };
 }
 async function connect(ph, pass, nouvelle) {
   const p = ph.p;
@@ -91,7 +93,10 @@ async function connect(ph, pass, nouvelle) {
   const [popup] = await Promise.all([ph.ctx.waitForEvent('page'), p.click('[data-act="drv-connect"]')]);
   await popup.waitForEvent('close', { timeout: 8000 }).catch(() => {});
   await p.waitForSelector('#drvPass', { timeout: 8000 });
-  assert.equal(await p.locator('#drvPass2').count(), nouvelle ? 1 : 0, nouvelle ? 'première fois : phrase à confirmer' : 'copie existante : une seule saisie');
+  if ((await p.locator('#drvPass2').count()) !== (nouvelle ? 1 : 0)) {
+    const diag = await p.evaluate(() => ({ carte: (document.getElementById('drive-card') || {}).textContent, etat: DS(), distant: DRIVE.hasRemote, msg: DRIVE.msg }));
+    throw new Error((nouvelle ? 'première fois : phrase à confirmer' : 'copie existante : une seule saisie') + ' — ' + JSON.stringify(diag) + ' — requêtes : ' + JSON.stringify(ph.journal.slice(-8)));
+  }
   await p.fill('#drvPass', pass); if (nouvelle) await p.fill('#drvPass2', pass);
   await p.click('[data-act="drv-pass"]');
 }
