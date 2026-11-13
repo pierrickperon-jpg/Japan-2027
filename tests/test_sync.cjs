@@ -43,8 +43,11 @@ async function fakeGoogle(ctx, base) {
   });
   await ctx.route('https://www.googleapis.com/**', async route => {
     const req = route.request(), u = new URL(req.url()), m = req.method();
-    if (!/^Bearer at-/.test(req.headers()['authorization'] || '')) return route.fulfill({ status: 401, body: '{}' });
-    const send = (o, status = 200) => route.fulfill({ status, contentType: 'application/json', body: typeof o === 'string' ? o : JSON.stringify(o) });
+    // Comme le vrai Google : réponses autorisées pour l'appli (CORS), y compris la requête préalable de Safari
+    const cors = { 'Access-Control-Allow-Origin': req.headers()['origin'] || '*', 'Access-Control-Allow-Headers': 'Authorization, Content-Type', 'Access-Control-Allow-Methods': 'GET, POST, PATCH, OPTIONS' };
+    if (m === 'OPTIONS') return route.fulfill({ status: 204, headers: cors, body: '' });
+    if (!/^Bearer at-/.test(req.headers()['authorization'] || '')) return route.fulfill({ status: 401, headers: cors, body: '{}' });
+    const send = (o, status = 200) => route.fulfill({ status, headers: cors, contentType: 'application/json', body: typeof o === 'string' ? o : JSON.stringify(o) });
     const meta = f => ({ id: f.id, name: f.name, version: String(f.version), modifiedTime: f.modifiedTime });
     if (m === 'GET' && u.pathname === '/drive/v3/files') {
       const q = u.searchParams.get('q') || ''; let l = [...drive.values()];
