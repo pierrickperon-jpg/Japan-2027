@@ -88,6 +88,11 @@ nav#nav a.on{color:var(--shu)}
 .th img{width:100%;height:100%;object-fit:cover}
 .vig{width:64px;height:64px;border-radius:10px;object-fit:cover;flex:none;background:#EDE6D8;display:block}
 .vig.p{width:52px;height:52px;border-radius:9px}
+.idee.avoir{background:#FBF0DA;border-color:#E9CC94;border-left:4px solid var(--ambre)}
+.idee.zappee{opacity:.6}
+.btns{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.btns .btn{flex:1 1 auto}
+.voir{font-size:14px;font-weight:700;color:var(--ai);margin-top:4px}
+.btn.on-avoir{background:var(--ambre);border-color:var(--ambre);color:#fff}
 .vig-grande{display:block;width:100%;max-height:220px;object-fit:cover;border-radius:12px;background:#EDE6D8}
 .th .x{position:absolute;top:3px;right:3px;width:26px;height:26px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;font-size:15px;line-height:26px;padding:0;cursor:pointer}
 .empty{text-align:center;color:var(--doux);padding:18px 8px}
@@ -112,7 +117,7 @@ nav#nav a.on{color:var(--shu)}
    Japon 2027 — appli de préparation et de voyage (PWA, données locales).
    Règles : voir CLAUDE.md du dépôt. Aucune donnée personnelle dans ce fichier.
    ===================================================================== */
-const APP_VERSION = '2026.11.13-3';
+const APP_VERSION = '2026.11.13-4';
 const DB_NAME = 'japon-2027', DB_VERSION = 1;
 const STORES = ['idees', 'etapes', 'jours', 'rappels', 'billets', 'depenses', 'meta', 'sauvegardes'];
 const DATA_STORES = ['idees', 'etapes', 'jours', 'rappels', 'billets', 'depenses'];
@@ -371,9 +376,31 @@ async function vignetteDe(blob) {
 }
 async function fetchT(url, opt, ms) { const ctl = new AbortController(); const to = setTimeout(() => ctl.abort(), ms || 9000); try { return await fetch(url, Object.assign({ signal: ctl.signal, credentials: 'omit', referrerPolicy: 'no-referrer' }, opt || {})); } finally { clearTimeout(to); } }
 function ytId(u) { try { const x = new URL(u); let id = ''; if (/youtu\.be$/.test(x.hostname)) id = x.pathname.split('/')[1]; else if (x.searchParams.get('v')) id = x.searchParams.get('v'); else { const m = x.pathname.match(/\/(shorts|embed|live)\/([^/?]+)/); if (m) id = m[2]; } return /^[A-Za-z0-9_-]{6,20}$/.test(id || '') ? id : ''; } catch (e) { return ''; } }
+// Titre et image d'une vidéo TikTok / YouTube (oEmbed puis image en CORS). Renvoie {titre, img} ; vides si refusé.
+async function videoInfo(u) {
+  const src = srcOf(u); let titre = '', thumb = '', img = '';
+  if (src !== 'tiktok' && src !== 'youtube') return { titre, img };
+  if (src === 'youtube' && ytId(u)) thumb = 'https://i.ytimg.com/vi/' + ytId(u) + '/hqdefault.jpg';
+  try {
+    const r = await fetchT((src === 'tiktok' ? 'https://www.tiktok.com/oembed?url=' : 'https://www.youtube.com/oembed?format=json&url=') + encodeURIComponent(u));
+    if (r.ok) { const j = await r.json(); titre = String(j.title || '').trim().slice(0, 300); if (!thumb) thumb = safeUrl(j.thumbnail_url); }
+  } catch (e) { /* réseau ou service indisponible */ }
+  if (thumb) { try { const r = await fetchT(thumb, { mode: 'cors' }); if (r.ok) img = await vignetteDe(await r.blob()); } catch (e) { /* image protégée */ } }
+  return { titre, img };
+}
+// Juste après « Ranger » (geste de l'utilisateur) : on tente titre et image des nouvelles vidéos, une à une, sans bloquer.
+async function autoVideos(recs) {
+  if (!navigator.onLine || navigator.webdriver) return;
+  for (const i of recs.filter(r => r.source === 'tiktok' || r.source === 'youtube').slice(0, 30)) {
+    const { titre, img } = await videoInfo(i.url); const cur = byId('idees', i.id); if (!cur || (!titre && !img)) continue;
+    if (titre && !cur.titre) cur.titre = titre; if (img && !cur.vignette) cur.vignette = img;
+    await saveRec('idees', cur);
+    const box = $('#pasteBox'); if (location.hash === '#/idees' && !(box && (box.value || document.activeElement === box))) render();
+  }
+}
 function vignetteBloc(store, r, auto) {
   const v = store === 'etapes' ? vigOf(r) : safeImg(r.vignette);
-  return `<div class="card">${v ? `<img class="vig-grande" src="${esc(v)}" alt="">` : ''}<div class="row" ${v ? 'style="margin-top:10px"' : ''}><label class="btn small file-btn">🖼 ${v ? 'Changer l’image' : 'Ajouter une image'}<input type="file" accept="image/*" data-change="vignette" data-store="${store}" data-id="${r.id}"></label>${auto ? `<button class="btn small" data-act="video-auto" data-id="${r.id}">Image et titre de la vidéo</button>` : ''}${safeImg(r.vignette) ? `<button class="btn small ghost" data-act="vignette-del" data-store="${store}" data-id="${r.id}">Retirer</button>` : ''}</div>${v ? '' : '<p class="hint">Astuce : une capture d’écran de la vidéo fait une très bonne image.</p>'}</div>`;
+  return `<div class="card">${v ? `<img class="vig-grande" src="${esc(v)}" alt="">` : ''}<div class="row" ${v ? 'style="margin-top:10px"' : ''}><label class="btn small file-btn">🖼 ${v ? 'Changer l’image' : 'Ajouter une image'}<input type="file" accept="image/*" data-change="vignette" data-store="${store}" data-id="${r.id}"></label>${auto ? `<button class="btn small" data-act="video-auto" data-store="${store}" data-id="${r.id}">Image et titre de la vidéo</button>` : ''}${safeImg(r.vignette) ? `<button class="btn small ghost" data-act="vignette-del" data-store="${store}" data-id="${r.id}">Retirer</button>` : ''}</div>${v ? '' : '<p class="hint">Astuce : une capture d’écran de la vidéo fait une très bonne image.</p>'}</div>`;
 }
 
 /* ---------- Échange entre téléphones, sauvegardes ---------- */
@@ -547,42 +574,41 @@ function rappelBanner() {
 }
 
 /* ----- Idées ----- */
-function ideeItem(i) {
-  const st = i.statut || 'a-trier', u = safeUrl(i.url);
-  const v = safeImg(i.vignette);
-  return `<div class="item">${v ? `<a href="#/idee/${i.id}"><img class="vig" src="${esc(v)}" alt=""></a>` : ''}<div class="corps"><a class="lien-plein" href="#/idee/${i.id}"><div class="row" style="gap:6px"><span class="badge ${esc(i.source)}">${SRC[i.source] || 'Lien'}</span>${i.etoile ? '<span style="color:var(--shu)">★</span>' : ''}${i.ville ? `<span class="s">${esc(i.ville)}</span>` : ''}${i.par ? `<span class="s">· ${esc(i.par)}</span>` : ''}</div><div class="t" style="margin-top:3px">${esc(ideeTitre(i))}</div>${i.note && i.titre ? `<div class="s">${esc(firstLine(i.note))}</div>` : ''}</a>
-  <div class="row" style="margin-top:8px">${u ? `<a class="btn small" href="${esc(u)}" target="_blank" rel="noopener">Voir ↗</a>` : ''}${st !== 'garde' ? `<button class="btn small" data-act="idee-statut" data-id="${i.id}" data-v="garde">✓ On garde</button>` : ''}${st !== 'ecarte' ? `<button class="btn small" data-act="idee-statut" data-id="${i.id}" data-v="ecarte">✕ On laisse</button>` : ''}${st !== 'a-trier' ? `<button class="btn small ghost" data-act="idee-statut" data-id="${i.id}" data-v="a-trier">À retrier</button>` : ''}</div></div></div>`;
+// Décision de Pierrick (13 novembre 2026, 2e version) : une idée = la vidéo + trois boutons. Aucune saisie sur l'idée :
+// « On garde » crée tout de suite l'étape (à placer) et c'est là qu'on la décrit ; « On zappe » la fait disparaître ;
+// « À voir » la met en couleur (sur les deux téléphones) pour trancher ensemble.
+const etapeOk = i => { const e = i.etapeId && byId('etapes', i.etapeId); return !!(e && !e.deleted); };
+const ideeSt = i => { const st = i.statut || 'a-trier'; return st === 'garde' && !etapeOk(i) ? 'a-trier' : st; }; // gardée sans étape : à reprendre
+const ideeVisible = i => ['a-trier', 'a-voir'].includes(ideeSt(i));
+function ideeCard(i) {
+  const st = ideeSt(i), u = safeUrl(i.url), v = safeImg(i.vignette);
+  const quand = i.createdAt ? new Date(i.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : '';
+  const head = `<div class="row" style="gap:6px"><span class="badge ${esc(i.source)}">${SRC[i.source] || 'Lien'}</span>${st === 'a-voir' ? '<span class="badge st-inscrit">À voir</span>' : ''}${i.par ? `<span class="s">${esc(i.par)}</span>` : ''}${quand ? `<span class="s">· ${esc(quand)}</span>` : ''}</div><div class="t" style="margin-top:3px">${esc(ideeTitre(i))}</div>${i.note && i.titre ? `<div class="s">${esc(firstLine(i.note))}</div>` : ''}${u ? '<div class="voir">▶ Voir la vidéo</div>' : ''}`;
+  const inner = `${v ? `<img class="vig" src="${esc(v)}" alt="">` : ''}<div class="corps">${head}</div>`;
+  const corps = u ? `<a class="lien-plein row" style="flex-wrap:nowrap;align-items:flex-start;gap:12px" href="${esc(u)}" target="_blank" rel="noopener">${inner}</a>` : `<div class="row" style="flex-wrap:nowrap;align-items:flex-start;gap:12px">${inner}</div>`;
+  const btns = st === 'ecarte' ? `<button class="btn small" data-act="idee-statut" data-id="${i.id}" data-v="a-trier">Remettre dans les idées</button>`
+    : st === 'garde' ? `<a class="btn small" href="#/etape/${i.etapeId}">Voir dans l’itinéraire</a>`
+    : `<button class="btn small prim" data-act="garder" data-id="${i.id}">✓ On garde</button><button class="btn small ${st === 'a-voir' ? 'on-avoir' : ''}" data-act="idee-statut" data-id="${i.id}" data-v="${st === 'a-voir' ? 'a-trier' : 'a-voir'}">${st === 'a-voir' ? 'À voir ✓' : '? À voir'}</button><button class="btn small ghost" data-act="idee-statut" data-id="${i.id}" data-v="ecarte">✕ On zappe</button>`;
+  return `<div class="card idee ${st === 'a-voir' ? 'avoir' : ''} ${st === 'ecarte' ? 'zappee' : ''}" data-idee="${i.id}">${corps}<div class="btns">${btns}</div></div>`;
 }
 function vIdees() {
-  H('Idées à voir');
-  const all = live('idees'); const f = LOC.ideeFiltre || 'a-trier'; const counts = { 'a-trier': 0, garde: 0, ecarte: 0 };
-  all.forEach(i => { counts[i.statut || 'a-trier'] = (counts[i.statut || 'a-trier'] || 0) + 1; });
-  const inF = all.filter(i => (i.statut || 'a-trier') === f);
-  const villes = [...new Set(inF.map(i => i.ville).filter(Boolean))].sort(cmpFr);
-  const ville = villes.includes(LOC.ideeVille) ? LOC.ideeVille : '';
-  const list = inF.filter(i => !ville || i.ville === ville).sort((a, b) => (b.etoile ? 1 : 0) - (a.etoile ? 1 : 0) || cmpFr(b.createdAt || '', a.createdAt || ''));
+  H('Idées');
+  const all = live('idees');
+  const vis = all.filter(ideeVisible).sort((a, b) => (ideeSt(b) === 'a-voir') - (ideeSt(a) === 'a-voir') || cmpFr(b.createdAt || '', a.createdAt || ''));
+  const zap = all.filter(i => ideeSt(i) === 'ecarte'), gard = all.filter(i => ideeSt(i) === 'garde');
+  const nVoir = vis.filter(i => ideeSt(i) === 'a-voir').length;
   return `${firstRunCards()}${rappelBanner()}
-<div class="card"><h2>Ajouter des liens</h2><p class="muted">Collez un lien TikTok, Facebook… ou tout un paquet de messages : seuls les liens sont gardés, les doublons sont écartés. Sans lien, le texte devient une idée.</p>
-<textarea id="pasteBox" placeholder="Collez ici"></textarea>${voyageursChips('par')}
+<div class="card"><h2>Ajouter des liens</h2><p class="muted">Collez un lien TikTok, Facebook… ou tout un paquet de messages : seuls les liens sont gardés, les doublons sont écartés.</p>
+<textarea id="pasteBox" placeholder="Collez ici" style="min-height:70px"></textarea>${voyageursChips('par')}
 <div class="row" style="margin-top:10px"><button class="btn" data-act="coller">Coller</button><button class="btn prim" style="flex:1" data-act="ranger">Ranger dans les idées</button></div></div>
-<div class="seg">${[['a-trier', 'À trier'], ['garde', 'Gardées'], ['ecarte', 'Laissées']].map(([v, l]) => `<button class="${f === v ? 'on' : ''}" data-act="filtre-idees" data-v="${v}">${l} <span class="n">${counts[v] || 0}</span></button>`).join('')}</div>
-${villes.length > 1 ? `<div class="chips"><button class="chip ${ville ? '' : 'on'}" data-act="idee-ville" data-v="">Toutes</button>${villes.map(v => `<button class="chip ${v === ville ? 'on' : ''}" data-act="idee-ville" data-v="${esc(v)}">${esc(v)}</button>`).join('')}</div>` : ''}
-<div class="card">${list.length ? list.map(ideeItem).join('') : `<div class="empty">${f === 'a-trier' ? 'Rien à trier pour l’instant.' : 'Aucune idée ici.'}</div>`}</div>`;
+${vis.length ? `<p class="muted">${vis.length} idée${vis.length > 1 ? 's' : ''} à trier${nVoir ? ' dont ' + nVoir + ' à voir ensemble' : ''}. Touchez une idée pour voir la vidéo, puis décidez.</p>` + vis.map(ideeCard).join('') : '<div class="card"><div class="empty">Rien à trier pour l’instant.</div></div>'}
+<div class="row" style="justify-content:space-between">${gard.length ? `<a class="btn small ghost" href="#/itineraire">${gard.length} gardée${gard.length > 1 ? 's' : ''} → itinéraire</a>` : '<span></span>'}${zap.length ? `<button class="btn small ghost" data-act="voir-zappees">${LOC.voirZap ? 'Cacher' : 'Voir'} les zappées (${zap.length})</button>` : ''}</div>
+${LOC.voirZap && zap.length ? '<div style="margin-top:12px">' + zap.map(ideeCard).join('') + '</div>' : ''}`;
 }
 function vIdee(id) {
   const i = byId('idees', id); if (!i || i.deleted) return notFound('#/idees');
   H('Idée', { back: '#/idees' });
-  const st = i.statut || 'a-trier', u = safeUrl(i.url); const e = i.etapeId && byId('etapes', i.etapeId); const eOk = e && !e.deleted;
-  return `${vignetteBloc('idees', i, i.source === 'tiktok' || i.source === 'youtube')}<div class="card" data-rec="idees:${i.id}">
-${u ? `<div class="row"><span class="badge ${esc(i.source)}">${SRC[i.source] || 'Lien'}</span><span class="s">${esc(shortUrl(u))}</span></div><a class="btn full" style="margin-top:10px" href="${esc(u)}" target="_blank" rel="noopener">Voir la vidéo ou la page ↗</a>` : ''}
-<label class="f">Ce que c’est</label><input data-f="titre" value="${esc(i.titre || '')}" placeholder="Ex. : ramen dans une ruelle de Shinjuku">
-<label class="f">Ville</label><input data-f="ville" list="villes" value="${esc(i.ville || '')}" placeholder="Tokyo, Kyoto…">
-<label class="f">À retenir : horaires, prix, réservation, astuce…</label><textarea data-f="note" placeholder="Vous ne reverrez pas la vidéo sur place : notez l’essentiel.">${esc(i.note || '')}</textarea>
-${voyageurSelect('par', i.par, 'Trouvée par')}
-<label class="check"><input type="checkbox" data-f="etoile" ${i.etoile ? 'checked' : ''}> Coup de cœur</label></div>
-<div class="card"><h2>Décision</h2><div class="seg">${[['a-trier', 'À trier'], ['garde', 'On garde'], ['ecarte', 'On laisse']].map(([v, l]) => `<button class="${st === v ? 'on' : ''}" data-act="idee-statut" data-id="${i.id}" data-v="${v}" data-reste="1">${l}</button>`).join('')}</div>
-${st === 'garde' ? (eOk ? `<a class="btn full" href="#/etape/${e.id}">Voir l’étape (${e.jour ? esc(dayLabel(e.jour)) : 'à placer'})</a>` : `<button class="btn prim full" data-act="idee-etape" data-id="${i.id}">Ajouter à l’itinéraire</button>`) : '<p class="muted" style="margin:0">Une idée gardée peut devenir une étape de l’itinéraire.</p>'}</div>
-<button class="btn danger" data-act="supprimer" data-store="idees" data-id="${i.id}" data-to="#/idees">Supprimer cette idée</button>${villesDatalist()}`;
+  return `${ideeCard(i)}<button class="btn danger" data-act="supprimer" data-store="idees" data-id="${i.id}" data-to="#/idees">Supprimer cette idée</button>`;
 }
 function vRecu() {
   if (!RECU) { location.replace('#/idees'); return ''; }
@@ -591,10 +617,10 @@ function vRecu() {
   if (!u) return `<div class="card"><h2>Aucun lien trouvé</h2><p class="muted">${esc(txt.trim())}</p><button class="btn" data-act="recu-annuler">Retour</button></div>`;
   const ex = live('idees').find(i => i.url && normUrl(i.url) === normUrl(u));
   if (ex) return `<div class="card"><h2>Déjà dans vos idées</h2><p>${esc(ideeTitre(ex))}</p><button class="btn prim" data-act="recu-voir" data-id="${ex.id}">Voir l’idée</button></div>`;
-  const note = [...new Set([RECU.titre, RECU.texte].map(s => String(s || '').replace(/https?:\/\/\S+/g, '').trim()).filter(Boolean))].join('\n');
-  return `<div class="card"><div class="row"><span class="badge ${srcOf(u)}">${SRC[srcOf(u)]}</span><span class="s">${esc(shortUrl(u))}</span></div>
-<label class="f">Ville</label><input id="recuVille" list="villes" placeholder="Tokyo, Kyoto…"><label class="f">Quelques mots</label><textarea id="recuNote">${esc(note)}</textarea>${voyageursChips('par')}
-<button class="btn prim full" style="margin-top:12px" data-act="recu-ranger" data-u="${esc(u)}">Ranger dans les idées</button></div>${villesDatalist()}`;
+  const titre = firstLine([RECU.titre, RECU.texte].map(s => String(s || '').replace(/https?:\/\/\S+/g, '').trim()).filter(Boolean).join('\n')).slice(0, 140);
+  const b = (v, l, c) => `<button class="btn ${c}" data-act="recu-ranger" data-u="${esc(u)}" data-t="${esc(titre)}" data-v="${v}">${l}</button>`;
+  return `<div class="card"><div class="row"><span class="badge ${srcOf(u)}">${SRC[srcOf(u)]}</span><span class="s">${esc(shortUrl(u))}</span></div>${titre ? `<div class="t" style="margin-top:6px">${esc(titre)}</div>` : ''}${voyageursChips('par')}
+<div class="btns">${b('garde', '✓ On garde', 'prim')}${b('a-voir', '? À voir', '')}${b('a-trier', 'Ranger pour plus tard', '')}</div></div>`;
 }
 
 /* ----- Itinéraire ----- */
@@ -634,7 +660,7 @@ function vEtape(id) {
   const jours = days.slice(); if (e.jour && !jours.includes(e.jour)) jours.unshift(e.jour);
   const idee = e.ideeId && byId('idees', e.ideeId); const lien = safeUrl(e.lien);
   return `<div class="row" style="margin-bottom:12px"><a class="btn shu" href="#/taxi/${e.id}">🚕 Montrer au taxi</a><a class="btn" href="${esc(mapUrl(e))}" target="_blank" rel="noopener">Google Maps ↗</a>${IS_IOS ? `<a class="btn" href="${esc(plansUrl(e))}" target="_blank" rel="noopener">Plans ↗</a>` : ''}</div>
-${vignetteBloc('etapes', e, false)}<div class="card" data-rec="etapes:${e.id}">
+${vignetteBloc('etapes', e, ['tiktok', 'youtube'].includes(srcOf(safeUrl(e.lien) || 'x')))}<div class="card" data-rec="etapes:${e.id}">
 <label class="f" style="margin-top:0">Quoi</label><input data-f="titre" value="${esc(e.titre || '')}" placeholder="Ex. : sanctuaire Fushimi Inari">
 <div class="row" style="align-items:flex-start"><div style="flex:2;min-width:150px"><label class="f">Jour</label><select data-f="jour" data-rerender="1"><option value="">À placer</option>${jours.map((d, k) => `<option value="${d}" ${d === e.jour ? 'selected' : ''}>${days.includes(d) ? 'J' + (days.indexOf(d) + 1) + ' · ' : ''}${esc(dayLabel(d))}</option>`).join('')}</select></div><div style="flex:1;min-width:110px"><label class="f">Heure</label><input type="time" data-f="heure" data-rerender="1" value="${esc(e.heure || '')}"></div></div>
 <label class="f">Ville</label><input data-f="ville" list="villes" value="${esc(e.ville || '')}">
@@ -853,7 +879,7 @@ function navHTML(h) {
   const items = v ? [['aujourdhui', 'Aujourd’hui', 'sun'], ['itineraire', 'Itinéraire', 'pin'], ['billets', 'Billets', 'ticket'], ['budget', 'Budget', 'yen'], ['plus', 'Plus', 'dots']]
     : [['idees', 'Idées', 'bulb'], ['itineraire', 'Itinéraire', 'pin'], ['rappels', 'Réserver', 'bell'], ['billets', 'Billets', 'ticket'], ['plus', 'Plus', 'dots']];
   if (!items.some(i => i[0] === tab)) tab = 'plus';
-  const nIdees = live('idees').filter(i => (i.statut || 'a-trier') === 'a-trier').length, nR = rappelsUrgents().length;
+  const nIdees = live('idees').filter(ideeVisible).length, nR = rappelsUrgents().length;
   const past = { idees: v ? 0 : nIdees, rappels: nR };
   return items.map(([k, l, ic]) => `<a href="#/${k}" class="${tab === k ? 'on' : ''}" data-tab="${k}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONS[ic]}</svg>${l}${past[k] ? `<span class="pastille">${past[k]}</span>` : ''}</a>`).join('');
 }
@@ -899,8 +925,6 @@ const ACTS = {
   'install-vu': () => { LOC.installVu = 1; saveLoc(); render(); },
   pick: a => { const k = a.dataset.k, v = a.dataset.v; LOC[k] = LOC[k] === v && k !== 'depDevise' && k !== 'depCat' ? '' : v; saveLoc(); a.parentNode.querySelectorAll('[data-act="pick"][data-k="' + k + '"]').forEach(b => b.classList.toggle('on', b.dataset.v === LOC[k])); },
   mode: a => { LOC.mode = a.dataset.v; saveLoc(); render(); },
-  'filtre-idees': a => { LOC.ideeFiltre = a.dataset.v; LOC.ideeVille = ''; saveLoc(); render(); },
-  'idee-ville': a => { LOC.ideeVille = a.dataset.v; saveLoc(); render(); },
   async coller() {
     const box = $('#pasteBox');
     try { const t = navigator.clipboard && await navigator.clipboard.readText(); if (t) box.value = (box.value ? box.value + '\n' : '') + t; else toast('Le presse-papiers est vide'); }
@@ -909,38 +933,40 @@ const ACTS = {
   async ranger() {
     const box = $('#pasteBox'); const r = await addIdeas(box.value, LOC.par || '');
     if (!r.ajout && !r.doublons) { toast('Rien à ranger', true); return; }
-    box.value = ''; LOC.ideeFiltre = 'a-trier'; saveLoc(); render();
+    box.value = ''; render();
     toast(r.ajout ? r.ajout + ' idée' + (r.ajout > 1 ? 's' : '') + ' ajoutée' + (r.ajout > 1 ? 's' : '') + (r.doublons ? ' · ' + r.doublons + ' déjà là' : '') : 'Déjà dans vos idées');
+    autoVideos(r.recs);
   },
   async 'idee-statut'(a) {
-    const i = byId('idees', a.dataset.id); if (!i) return; i.statut = a.dataset.v; await saveRec('idees', i);
-    if (a.dataset.v === 'garde' && !a.dataset.reste) { go('#/idee/' + i.id); toast('Notez l’essentiel, puis ajoutez-la à l’itinéraire'); } else render();
+    const i = byId('idees', a.dataset.id); if (!i) return; i.statut = a.dataset.v; await saveRec('idees', i); render();
+    if (a.dataset.v === 'ecarte') toast('Idée zappée'); else if (a.dataset.v === 'a-voir') toast('À voir ensemble');
   },
+  async garder(a) {
+    // On garde : l'étape est créée tout de suite (à placer) et on la décrit là, une seule fois.
+    const i = byId('idees', a.dataset.id); if (!i) return;
+    if (etapeOk(i)) { if (i.statut !== 'garde') { i.statut = 'garde'; await saveRec('idees', i); } go('#/etape/' + i.etapeId); return; }
+    const e = { id: uid('e'), titre: i.titre || '', ville: i.ville || '', note: i.note || '', lien: i.url || '', ideeId: i.id, jour: null, ordre: nextOrdre(null) };
+    await saveRec('etapes', e); i.etapeId = e.id; i.statut = 'garde'; await saveRec('idees', i);
+    go('#/etape/' + e.id); toast('On garde ! Décrivez l’activité et choisissez le jour');
+  },
+  'voir-zappees': () => { LOC.voirZap = !LOC.voirZap; saveLoc(); render(); },
   async 'video-auto'(a) {
     // Image et titre de la vidéo (TikTok, YouTube), sur un toucher ; on n'envoie que le lien. Sans succès : capture d'écran.
-    const i = byId('idees', a.dataset.id); const u = safeUrl(i && i.url); if (!u) return;
-    a.disabled = true; let titre = '', thumb = '', img = '';
-    if (i.source === 'youtube' && ytId(u)) thumb = 'https://i.ytimg.com/vi/' + ytId(u) + '/hqdefault.jpg';
-    try {
-      const r = await fetchT((i.source === 'tiktok' ? 'https://www.tiktok.com/oembed?url=' : 'https://www.youtube.com/oembed?format=json&url=') + encodeURIComponent(u));
-      if (r.ok) { const j = await r.json(); titre = String(j.title || '').trim().slice(0, 300); if (!thumb) thumb = safeUrl(j.thumbnail_url); }
-    } catch (e) { /* réseau ou service indisponible */ }
-    if (thumb) { try { const r = await fetchT(thumb, { mode: 'cors' }); if (r.ok) img = await vignetteDe(await r.blob()); } catch (e) { /* image protégée */ } }
-    if (titre && !i.titre) i.titre = titre;
-    if (img) i.vignette = img;
-    if (img || titre) { await saveRec('idees', i); render(); toast(img ? (titre ? 'Image et titre récupérés' : 'Image récupérée') : 'Titre récupéré, image indisponible : ajoutez une capture d’écran', !img); }
+    const st = a.dataset.store || 'idees', r = byId(st, a.dataset.id); const u = safeUrl(r && (st === 'idees' ? r.url : r.lien)); if (!u) return;
+    a.disabled = true; const { titre, img } = await videoInfo(u);
+    if (titre && !r.titre) r.titre = titre;
+    if (img) r.vignette = img;
+    if (img || titre) { await saveRec(st, r); render(); toast(img ? (titre ? 'Image et titre récupérés' : 'Image récupérée') : 'Titre récupéré, image indisponible : ajoutez une capture d’écran', !img); }
     else { a.disabled = false; toast('Rien de récupérable pour ce lien : ajoutez une capture d’écran', true); }
   },
   async 'vignette-del'(a) { const r = byId(a.dataset.store, a.dataset.id); if (!r) return; r.vignette = ''; await saveRec(a.dataset.store, r); render(); },
-  async 'idee-etape'(a) {
-    const i = byId('idees', a.dataset.id); if (!i) return;
-    const e = { id: uid('e'), titre: i.titre || firstLine(i.note) || '', ville: i.ville || '', note: i.note || '', lien: i.url || '', ideeId: i.id, jour: null, ordre: nextOrdre(null) };
-    await saveRec('etapes', e); i.etapeId = e.id; i.statut = 'garde'; await saveRec('idees', i);
-    go('#/etape/' + e.id); toast('Étape créée : choisissez le jour');
-  },
   async 'recu-ranger'(a) {
-    const r = await addIdeas(a.dataset.u, LOC.par || '', { ville: ($('#recuVille').value || '').trim(), note: ($('#recuNote').value || '').trim() });
-    RECU = null; toast(r.ajout ? 'Idée rangée' : 'Déjà dans vos idées'); LOC.ideeFiltre = 'a-trier'; saveLoc(); go('#/idees');
+    const r = await addIdeas(a.dataset.u, LOC.par || '', { titre: a.dataset.t || '' }); RECU = null;
+    const i = r.recs[0]; if (!i) { toast('Déjà dans vos idées'); go('#/idees'); return; }
+    autoVideos(r.recs);
+    if (a.dataset.v === 'garde') return ACTS.garder({ dataset: { id: i.id } });
+    if (a.dataset.v === 'a-voir') { i.statut = 'a-voir'; await saveRec('idees', i); }
+    toast(a.dataset.v === 'a-voir' ? 'Rangée, à voir ensemble' : 'Idée rangée'); go('#/idees');
   },
   'recu-voir': a => { RECU = null; go('#/idee/' + a.dataset.id); },
   'recu-annuler': () => { RECU = null; go('#/idees'); },
@@ -956,7 +982,9 @@ const ACTS = {
   },
   async supprimer(a) {
     if (!confirm('Supprimer ? (une copie reste dans les sauvegardes)')) return;
-    await softDelete(a.dataset.store, a.dataset.id); toast('Supprimé'); go(a.dataset.to || '#/');
+    await softDelete(a.dataset.store, a.dataset.id);
+    if (a.dataset.store === 'etapes') { const e = byId('etapes', a.dataset.id), i = e && e.ideeId && byId('idees', e.ideeId); if (i && !i.deleted) { i.statut = 'ecarte'; await saveRec('idees', i); } }
+    toast('Supprimé'); go(a.dataset.to || '#/');
   },
   async 'rappel-add'(a) {
     const m = MODELES[a.dataset.v]; const r = { id: uid('r'), modele: a.dataset.v, titre: m.titre, lien: m.lien, statut: 'a-faire', dateVisite: null, etapeId: '', note: '' };

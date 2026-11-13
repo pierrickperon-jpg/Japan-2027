@@ -45,7 +45,7 @@ const countIs = async (p, sel, n, msg) => { await p.waitForFunction(([s, n]) => 
     /* ---------- Téléphone 1 (iPhone) ---------- */
     const ctxA = await browser.newContext(sans(IPHONE));
     const A = await page(ctxA, base, errors);
-    await titleIs(A, 'Idées à voir');
+    await titleIs(A, 'Idées');
     await A.waitForSelector('text=Installez l’appli d’abord', { timeout: 5000 });
     await A.waitForSelector('text=Pour commencer', { timeout: 5000 });
 
@@ -62,22 +62,24 @@ const countIs = async (p, sel, n, msg) => { await p.waitForFunction(([s, n]) => 
     await A.click('text=Alix');
     await A.fill('#pasteBox', 'Regarde ça https://vm.tiktok.com/ZMabc123/ trop bien !\nEt https://www.facebook.com/share/r/1AbCdEf/?mibextid=xyz\nencore https://vm.tiktok.com/ZMabc123/?_r=1\nhttps://www.youtube.com/watch?v=dQw4w9WgXcQ&si=zz.');
     await A.click('text=Ranger dans les idées');
-    await A.waitForSelector('.item');
-    assert.equal(await A.locator('#view .item').count(), 3, '3 idées (1 doublon écarté)');
+    await countIs(A, '#view .idee', 3, '3 idées (1 doublon écarté)');
     // Coller à nouveau : rien de nouveau
     await A.fill('#pasteBox', 'https://vm.tiktok.com/ZMabc123');
     await A.click('text=Ranger dans les idées');
-    await countIs(A, '#view .item', 3);
+    await countIs(A, '#view .idee', 3);
     // Une idée sans lien
     await A.fill('#pasteBox', 'Marché Nishiki\nle matin, avant la foule');
     await A.click('text=Ranger dans les idées');
-    await countIs(A, '#view .item', 4);
+    await countIs(A, '#view .idee', 4);
     assert.equal(await A.textContent('nav a[data-tab="idees"] .pastille'), '4');
 
-    // Trier : garder la vidéo TikTok, laisser la vidéo YouTube
-    const tiktok = A.locator('#view .item', { hasText: 'vm.tiktok.com' });
+    // Trier : une idée = la vidéo + trois boutons. « On garde » ouvre directement l’étape à décrire (une seule saisie)
+    const tiktok = A.locator('#view .idee', { hasText: 'vm.tiktok.com' });
+    assert.equal(await tiktok.locator('input, textarea').count(), 0, 'aucune saisie sur une idée');
     await tiktok.locator('text=✓ On garde').click();
-    await titleIs(A, 'Idée');
+    await titleIs(A, 'Étape');
+    await A.waitForSelector('text=À placer', { timeout: 5000 });
+    assert.equal(await A.inputValue('[data-f="lien"]'), 'https://vm.tiktok.com/ZMabc123/', 'le lien de la vidéo suit');
     await blurFill(A, '[data-f="titre"]', 'Ramen dans une ruelle');
     await blurFill(A, '[data-f="ville"]', 'Tokyo');
     await blurFill(A, '[data-f="note"]', 'Ouvert 11 h – 15 h, prévoir 1 200 ¥');
@@ -85,10 +87,7 @@ const countIs = async (p, sel, n, msg) => { await p.waitForFunction(([s, n]) => 
     await A.setInputFiles('input[data-change="vignette"]', { name: 'capture.png', mimeType: 'image/png', buffer: PNG });
     await A.waitForSelector('.vig-grande', { timeout: 5000 });
     assert.ok(/^data:image\/jpeg;base64,/.test(await A.getAttribute('.vig-grande', 'src')), 'vignette en JPEG intégré');
-    await A.click('text=Ajouter à l’itinéraire');
-    await A.waitForSelector('[data-f="jour"]');
     await titleIs(A, 'Ramen dans une ruelle');
-    await A.waitForSelector('.vig-grande', { timeout: 5000 }); // l’étape montre l’image de son idée
     await A.selectOption('[data-f="jour"]', '2027-05-22');
     await A.waitForTimeout(150);
     await blurFill(A, '[data-f="heure"]', '12:30');
@@ -115,10 +114,18 @@ const countIs = async (p, sel, n, msg) => { await p.waitForFunction(([s, n]) => 
     await countIs(A, 'a.jour', 17, '17 jours du 21 mai au 6 juin');
     assert.ok((await A.locator('a.jour').nth(1).textContent()).includes('nuit : Hôtel fictif Shinjuku'));
 
-    // Laisser la vidéo YouTube
+    // Zapper la vidéo YouTube (elle disparaît), mettre la vidéo Facebook « À voir » (en couleur)
     await A.goto(base + '/#/idees');
-    await A.locator('#view .item', { hasText: 'youtube.com' }).locator('text=✕ On laisse').click();
-    await countIs(A, '#view .item', 2, 'restent 2 idées à trier');
+    await A.locator('#view .idee', { hasText: 'youtube.com' }).locator('text=✕ On zappe').click();
+    await countIs(A, '#view .idee', 2, 'restent 2 idées à trier');
+    await A.locator('#view .idee', { hasText: 'facebook.com' }).locator('text=? À voir').click();
+    await countIs(A, '#view .idee.avoir', 1, 'idée à voir en couleur');
+    assert.ok((await A.textContent('#view .idee')).includes('facebook.com'), 'les idées « à voir » passent en tête');
+    assert.equal(await A.textContent('nav a[data-tab="idees"] .pastille'), '2');
+    await A.click('text=Voir les zappées (1)');
+    await A.locator('#view .idee.zappee', { hasText: 'youtube.com' }).waitFor({ timeout: 5000 });
+    await A.click('text=Cacher les zappées (1)');
+    await A.waitForSelector('text=1 gardée → itinéraire', { timeout: 5000 });
 
     // Réservations : dates calculées en heure de Paris
     await A.goto(base + '/#/rappels');
@@ -204,7 +211,7 @@ const countIs = async (p, sel, n, msg) => { await p.waitForFunction(([s, n]) => 
     // Rechargement : rien ne disparaît
     await A.reload(); await A.waitForSelector('nav#nav a');
     await A.goto(base + '/#/idees');
-    await countIs(A, '#view .item', 2);
+    await countIs(A, '#view .idee', 2);
 
     /* ---------- Téléphone 2 (Android) ---------- */
     const ctxB = await browser.newContext(sans(ANDROID));
@@ -225,13 +232,13 @@ const countIs = async (p, sel, n, msg) => { await p.waitForFunction(([s, n]) => 
 
     // Partage depuis TikTok sur Android
     await B.goto(base + '/?titre=' + encodeURIComponent('Le meilleur onsen') + '&texte=' + encodeURIComponent('Regarde https://vm.tiktok.com/ZMnouv99/ #japon'));
-    await B.waitForSelector('#recuVille');
     await titleIs(B, 'Lien reçu');
-    await B.fill('#recuVille', 'Hakone');
+    await B.waitForSelector('text=Le meilleur onsen', { timeout: 5000 });
     await B.click('[data-act="pick"][data-v="Bao"]');
-    await B.click('text=Ranger dans les idées');
-    await titleIs(B, 'Idées à voir');
-    await countIs(B, '#view .item', 3);
+    await B.click('text=Ranger pour plus tard');
+    await titleIs(B, 'Idées');
+    await countIs(B, '#view .idee', 3);
+    await countIs(B, '#view .idee.avoir', 1, '« à voir » reçu de l’autre téléphone');
     await B.waitForSelector('text=Le meilleur onsen', { timeout: 5000 });
     // Le même lien partagé une 2e fois est reconnu
     await B.goto(base + '/?texte=' + encodeURIComponent('https://vm.tiktok.com/ZMnouv99'));
@@ -239,8 +246,8 @@ const countIs = async (p, sel, n, msg) => { await p.waitForFunction(([s, n]) => 
 
     // Modification sur B, retour vers A
     await B.goto(base + '/#/idees');
-    await B.locator('#view .item', { hasText: 'Marché Nishiki' }).locator('a.lien-plein').click();
-    await blurFill(B, '[data-f="ville"]', 'Kyoto');
+    await B.locator('#view .idee', { hasText: 'Marché Nishiki' }).locator('text=? À voir').click();
+    await countIs(B, '#view .idee.avoir', 2);
     await B.goto(base + '/#/echange');
     const [dl2] = await Promise.all([B.waitForEvent('download'), B.click('text=Préparer et envoyer')]);
     const f2 = path.join(tmp, 'echange2.json'); fs.copyFileSync(await dl2.path(), f2);
@@ -251,8 +258,15 @@ const countIs = async (p, sel, n, msg) => { await p.waitForFunction(([s, n]) => 
     await A.click('[data-act="import-go"]');
     await A.waitForTimeout(200);
     await A.goto(base + '/#/idees');
-    await countIs(A, '#view .item', 3, 'idée Android reçue sur l’iPhone');
-    assert.ok((await A.locator('#view .item', { hasText: 'Marché Nishiki' }).textContent()).includes('Kyoto'), 'modification reçue');
+    await countIs(A, '#view .idee', 3, 'idée Android reçue sur l’iPhone');
+    await countIs(A, '#view .idee.avoir', 2, '« à voir » d’Android reçu sur l’iPhone');
+    // Supprimer l’étape d’une idée gardée : l’idée passe dans les zappées (récupérable)
+    const ramen = (await A.evaluate(() => S.etapes.find(e => e.titre === 'Ramen dans une ruelle').id));
+    await A.goto(base + '/#/etape/' + ramen);
+    await A.click('text=Supprimer cette étape');
+    await A.waitForFunction(() => location.hash.startsWith('#/jour/'), null, { timeout: 5000 });
+    await A.goto(base + '/#/idees');
+    await A.waitForFunction(() => /zappées \(2\)/.test(document.querySelector('#view').textContent), null, { timeout: 5000 }).catch(async () => { throw new Error('zappées : ' + JSON.stringify(await A.evaluate(() => ({ txt: document.querySelector('#view').textContent.slice(-200), idees: S.idees.map(i => [i.url, i.statut, i.etapeId]), et: S.etapes.filter(e => e.ideeId).map(e => [e.id, e.deleted]) })))); });
     await A.goto(base + '/#/billet/' + p1.data.billets[0].id);
     await countIs(A, '.thumbs img', 1, 'la pièce jointe locale est gardée');
 

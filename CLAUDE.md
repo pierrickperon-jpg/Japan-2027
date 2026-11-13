@@ -12,7 +12,7 @@ Les données vivent **uniquement** dans l'IndexedDB `japon-2027` de chaque tél�
 - À chaque version : changer `APP_VERSION` dans `app/index.html` **et** `VERSION` dans `app/service-worker.js` (identiques, vérifié par `tests/check_static.cjs`). Sinon les téléphones gardent l'ancienne version.
 - Aucune donnée réelle (prénoms, adresses, réservations, liens) dans le code, les tests ou le README : le site est public, seul le dépôt est privé. Les tests fabriquent des données fictives.
 - iOS 15 : pas d'assertion arrière dans les expressions régulières (`(?<=`, `(?<!`).
-- Services extérieurs seulement sur un toucher et avec le strict nécessaire : titre d'une vidéo (oEmbed TikTok / YouTube, on n'envoie que le lien), taux du jour (Frankfurter, rien n'est envoyé). Cartes : liens vers Google Maps / Plans, ouverts sur un toucher.
+- Services extérieurs seulement après un geste de l'utilisateur et avec le strict nécessaire : titre et image d'une vidéo (oEmbed TikTok / YouTube, on n'envoie que le lien), taux du jour (Frankfurter, rien n'est envoyé). Cartes : liens vers Google Maps / Plans, ouverts sur un toucher.
 - Textes de l'appli en français simple, sans jargon.
 
 ## Architecture (`app/index.html`)
@@ -26,10 +26,13 @@ Les données vivent **uniquement** dans l'IndexedDB `japon-2027` de chaque tél�
 
 ## Idées (préparation seulement)
 
-- Décision de Pierrick (13 novembre 2026) : les liens TikTok / Facebook que les deux voyageurs s'envoient servent **uniquement à la préparation**. On trie (`statut` : `a-trier`, `garde`, `ecarte`), on note l'essentiel (`titre`, `ville`, `note` : horaires, prix, astuce) et une idée gardée devient une étape (`idee.etapeId`, `etape.ideeId`). En mode voyage, les idées disparaissent de la barre du bas (toujours dans « Plus »), rien n'est effacé.
+- Décision de Pierrick (13 novembre 2026) : les liens TikTok / Facebook que les deux voyageurs s'envoient servent **uniquement à la préparation**. En mode voyage, les idées disparaissent de la barre du bas (toujours dans « Plus »), rien n'est effacé.
+- Décision de Pierrick (13 novembre 2026, lot 3) : **une idée = la vidéo + trois boutons, aucune saisie sur l'idée** (pour ne pas décrire deux fois). Toucher la carte ouvre la vidéo. `statut` : `a-trier` (nouvelle), `a-voir` (on hésite : carte en couleur ocre `.idee.avoir`, en tête de liste, visible sur les deux téléphones par l'échange), `garde`, `ecarte` (« On zappe » : la carte disparaît ; « Voir les zappées » permet de la remettre).
+- « On garde » (`garder`) crée **tout de suite** l'étape « à placer » (`titre`, `ville`, `note`, `lien` = lien de la vidéo, `ideeId`) et ouvre sa fiche : c'est là qu'on décrit l'activité et qu'on choisit le jour. Une idée `garde` sans étape vivante (anciennes données, étape supprimée) est traitée comme à trier (`ideeSt`). Supprimer une étape issue d'une idée passe l'idée en `ecarte`.
+- La pastille « Idées » compte les idées à trier et à voir (`ideeVisible`). L'ancienne fiche de saisie de l'idée n'existe plus : `#/idee/<id>` montre la même carte que la liste.
 - Ajout : coller un lien ou tout un paquet de messages (`extractUrls`) ; doublons écartés par `normUrl` (hôte sans `www.`/`m.`, paramètres de pistage `TRACKING` retirés). Sans lien, le texte devient une idée `source: 'note'`.
-- Android : `share_target` du manifeste (GET sur `./` avec `titre`, `texte`, `lien`) → écran `#/recu`. iPhone : Safari ne permet pas à une appli web d'apparaître dans le menu Partager → copier le lien puis « Coller ».
-- Image et titre de la vidéo (`video-auto`, remplace l'ancien `titre-auto`) : sur un toucher, oEmbed TikTok / YouTube (titre + `thumbnail_url` ; YouTube : `i.ytimg.com/vi/<id>/hqdefault.jpg`), puis l'image est téléchargée (CORS) et réduite en vignette. Le titre ne remplace pas un titre déjà saisi. En cas d'échec (réseau, CORS, Facebook) : message conseillant une capture d'écran.
+- Android : `share_target` du manifeste (GET sur `./` avec `titre`, `texte`, `lien`) → écran `#/recu` avec « On garde », « À voir », « Ranger pour plus tard ». iPhone : Safari ne permet pas à une appli web d'apparaître dans le menu Partager → copier le lien puis « Coller ».
+- Image et titre de la vidéo : tentés automatiquement juste après « Ranger » (`autoVideos`, une vidéo à la fois, 30 au plus, jamais sous automate de test) et sur le bouton `video-auto` de la fiche étape (lien vidéo). `videoInfo` : oEmbed TikTok / YouTube (titre + `thumbnail_url` ; YouTube : `i.ytimg.com/vi/<id>/hqdefault.jpg`), puis l'image est téléchargée (CORS) et réduite en vignette. Le titre ne remplace pas un titre déjà saisi. En cas d'échec (réseau, CORS, Facebook) : message conseillant une capture d'écran.
 
 ## Vignettes (lot 2, demande de Pierrick du 13 novembre 2026)
 
