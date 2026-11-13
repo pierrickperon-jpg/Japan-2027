@@ -77,7 +77,8 @@ const until = async (fn, msg, ms = 8000) => { const t0 = Date.now(); for (;;) { 
 const mainFile = () => [...drive.values()].find(f => f.name === 'japon-2027-sync.json');
 
 async function phone(browser, base, prof, errors, nom) {
-  const ctx = await browser.newContext(prof); await fakeGoogle(ctx, base);
+  // Service worker bloqué pour ce test : sous WebKit, les requêtes qui le traversent échappent au Google simulé.
+  const ctx = await browser.newContext(Object.assign({ serviceWorkers: 'block' }, prof)); await fakeGoogle(ctx, base);
   await ctx.addInitScript(n => { window.__driveDelay = 150; if (!localStorage.getItem('japon-2027-local')) localStorage.setItem('japon-2027-local', JSON.stringify({ installVu: 1, appareil: n })); }, nom);
   const p = await ctx.newPage(); const journal = [];
   p.on('requestfailed', r => journal.push('échec ' + r.method() + ' ' + r.url().slice(0, 90) + ' ' + (r.failure() || {}).errorText));
