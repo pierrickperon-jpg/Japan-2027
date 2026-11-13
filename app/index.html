@@ -608,7 +608,7 @@ async function driveFinishConnect(r, verifier) {
   await setDrv('driveAuth', { refresh: j.refresh_token, at: Date.now() });
   DRIVE.access = { token: j.access_token, exp: Date.now() + (j.expires_in || 3600) * 1000 };
   DRIVE.msg = 'Recherche d’une copie sur le Drive…'; driveRender();
-  let error = ''; try { DRIVE.hasRemote = !!(await driveFind()); } catch (e) { error = e.message; }
+  let error = ''; try { DRIVE.hasRemote = !!(await driveFind().catch(e => { if (e.code === 'retry') return driveFind(); throw e; })); } catch (e) { error = e.message; }
   await setDS({ needAuth: false, error }); DRIVE.msg = ''; driveRender();
 }
 async function driveToken() {

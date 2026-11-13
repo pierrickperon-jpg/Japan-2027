@@ -42,11 +42,11 @@ async function fakeGoogle(ctx, base) {
     route.fulfill({ contentType: 'text/html', body: `<script>location.replace(${JSON.stringify(base + '/?code=code-ok&state=')} + ${JSON.stringify(st)})</script>` });
   });
   await ctx.route('https://www.googleapis.com/**', async route => {
-    const req = route.request(), u = new URL(req.url()), m = req.method();
+    const req = route.request(), u = new URL(req.url()), m = req.method(), h = await req.allHeaders(); // allHeaders : WebKit masque Authorization dans headers()
     // Comme le vrai Google : réponses autorisées pour l'appli (CORS), y compris la requête préalable de Safari
-    const cors = { 'Access-Control-Allow-Origin': req.headers()['origin'] || '*', 'Access-Control-Allow-Headers': 'Authorization, Content-Type', 'Access-Control-Allow-Methods': 'GET, POST, PATCH, OPTIONS' };
+    const cors = { 'Access-Control-Allow-Origin': h['origin'] || '*', 'Access-Control-Allow-Headers': 'Authorization, Content-Type', 'Access-Control-Allow-Methods': 'GET, POST, PATCH, OPTIONS' };
     if (m === 'OPTIONS') return route.fulfill({ status: 204, headers: cors, body: '' });
-    if (!/^Bearer at-/.test(req.headers()['authorization'] || '')) return route.fulfill({ status: 401, headers: cors, body: '{}' });
+    if (!/^Bearer at-/.test(h['authorization'] || '')) return route.fulfill({ status: 401, headers: cors, body: '{}' });
     const send = (o, status = 200) => route.fulfill({ status, headers: cors, contentType: 'application/json', body: typeof o === 'string' ? o : JSON.stringify(o) });
     const meta = f => ({ id: f.id, name: f.name, version: String(f.version), modifiedTime: f.modifiedTime });
     if (m === 'GET' && u.pathname === '/drive/v3/files') {
@@ -60,7 +60,7 @@ async function fakeGoogle(ctx, base) {
     mm = u.pathname.match(/^\/upload\/drive\/v3\/files\/([^/]+)$/);
     if (m === 'PATCH' && mm) { const f = drive.get(mm[1]); f.content = req.postData(); f.version++; f.modifiedTime = new Date().toISOString(); return send(meta(f)); }
     if (m === 'POST' && u.pathname === '/upload/drive/v3/files') {
-      const body = req.postData(), b = (req.headers()['content-type'].match(/boundary=(.+)$/) || [])[1];
+      const body = req.postData(), b = (h['content-type'].match(/boundary=(.+)$/) || [])[1];
       const parts = body.split('--' + b).filter(x => x.trim() && x.trim() !== '--').map(x => x.split('\r\n\r\n').slice(1).join('\r\n\r\n').replace(/\r\n$/, ''));
       const md = JSON.parse(parts[0]); assert.deepEqual(md.parents, ['appDataFolder'], 'toujours dans le dossier caché');
       const f = { id: 'f' + (nextId++), name: md.name, version: 1, content: parts[1], modifiedTime: new Date().toISOString() }; drive.set(f.id, f); return send(meta(f));
