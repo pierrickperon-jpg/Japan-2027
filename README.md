@@ -1,5 +1,7 @@
 # Japon 2027
 
+En ligne : https://japan-27.netlify.app
+
 Petite appli pour préparer puis vivre le voyage au Japon, sur iPhone et Android (et PC pour préparer) :
 
 - **Idées** : les liens TikTok, Facebook… qu'on s'envoie, triés (on garde / on laisse) avec l'essentiel noté ; une idée gardée devient une étape.

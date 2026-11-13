@@ -6,7 +6,7 @@ Les données vivent **uniquement** dans l'IndexedDB `japon-2027` de chaque tél�
 
 ## Règles de base
 
-- Ne jamais changer l'adresse de publication une fois l'appli en service : le navigateur range les données par adresse.
+- Adresse de publication : **https://japan-27.netlify.app** (choisie par Pierrick le 13 novembre 2026). Ne jamais la changer : le navigateur range les données par adresse.
 - Évolutions **additives uniquement** : ajouter un magasin (dans `STORES`, en montant `DB_VERSION`) ou un champ ; jamais supprimer, renommer ni changer le sens d'un champ. Une fiche ancienne sans le nouveau champ doit rester lisible.
 - Suppression = `deleted: true` (`softDelete`), jamais d'effacement : la suppression voyage ainsi vers l'autre téléphone.
 - À chaque version : changer `APP_VERSION` dans `app/index.html` **et** `VERSION` dans `app/service-worker.js` (identiques, vérifié par `tests/check_static.cjs`). Sinon les téléphones gardent l'ancienne version.
@@ -74,5 +74,6 @@ Règles relevées le 13 novembre 2026 (site officiel Ghibli ; guides concordants
 
 ## Publication
 
-- Netlify publie le dossier `app/` depuis `main` (pas de commande de construction). Regrouper les publications : chaque déploiement coûte des crédits Netlify.
+- Netlify (projet `japan-27`) publie le dossier `app/` depuis `main` (pas de commande de construction). Regrouper les publications : chaque déploiement coûte des crédits Netlify.
+- `netlify.toml` › `ignore` : un envoi qui ne touche ni `app/` ni `netlify.toml` (documentation, tests) ne republie pas le site.
 - Avant de pousser : contrôles statiques, test complet, version changée.
