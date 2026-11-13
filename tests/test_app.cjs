@@ -30,6 +30,7 @@ async function page(ctx, base, errors) {
   await p.waitForSelector('nav#nav a');
   return p;
 }
+const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
 const blurFill = async (p, sel, v) => { await p.fill(sel, v); await p.locator(sel).blur(); await p.waitForTimeout(80); };
 const titleIs = async (p, t) => { await p.waitForFunction(t => document.querySelector('#title').textContent.trim() === t, t, { timeout: 4000 }).catch(() => {}); assert.equal((await p.textContent('#title')).trim(), t); };
 // Attend que le nombre d'éléments soit atteint (les écritures sont asynchrones), puis vérifie.
@@ -80,9 +81,14 @@ const countIs = async (p, sel, n, msg) => { await p.waitForFunction(([s, n]) => 
     await blurFill(A, '[data-f="titre"]', 'Ramen dans une ruelle');
     await blurFill(A, '[data-f="ville"]', 'Tokyo');
     await blurFill(A, '[data-f="note"]', 'Ouvert 11 h – 15 h, prévoir 1 200 ¥');
+    // Vignette : une capture d’écran devient une petite image enregistrée dans la fiche
+    await A.setInputFiles('input[data-change="vignette"]', { name: 'capture.png', mimeType: 'image/png', buffer: PNG });
+    await A.waitForSelector('.vig-grande', { timeout: 5000 });
+    assert.ok(/^data:image\/jpeg;base64,/.test(await A.getAttribute('.vig-grande', 'src')), 'vignette en JPEG intégré');
     await A.click('text=Ajouter à l’itinéraire');
     await A.waitForSelector('[data-f="jour"]');
     await titleIs(A, 'Ramen dans une ruelle');
+    await A.waitForSelector('.vig-grande', { timeout: 5000 }); // l’étape montre l’image de son idée
     await A.selectOption('[data-f="jour"]', '2027-05-22');
     await A.waitForTimeout(150);
     await blurFill(A, '[data-f="heure"]', '12:30');
@@ -101,6 +107,7 @@ const countIs = async (p, sel, n, msg) => { await p.waitForFunction(([s, n]) => 
     await blurFill(A, '[data-f="titre"]', 'Sanctuaire Meiji');
     await blurFill(A, '[data-f="heure"]', '09:00');
     await A.goto(base + '/#/jour/2027-05-22');
+    await A.waitForSelector('#view .vig.p', { timeout: 5000 });
     const progr = await A.locator('#view .card').nth(1).locator('.item .t').allTextContents();
     assert.deepEqual(progr.map(s => s.replace(/\s+/g, ' ').trim()), ['09:00 · Sanctuaire Meiji', '12:30 · Ramen dans une ruelle']);
     await blurFill(A, '[data-f="nuit"]', 'Hôtel fictif Shinjuku');
@@ -158,8 +165,7 @@ const countIs = async (p, sel, n, msg) => { await p.waitForFunction(([s, n]) => 
     await A.waitForSelector('[data-f="titre"]');
     await blurFill(A, '[data-f="titre"]', 'Musée fictif');
     await blurFill(A, '[data-f="date"]', '2027-05-25');
-    const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
-    await A.setInputFiles('input[data-change="fichiers"]', { name: 'qr.png', mimeType: 'image/png', buffer: png });
+    await A.setInputFiles('input[data-change="fichiers"]', { name: 'qr.png', mimeType: 'image/png', buffer: PNG });
     await A.waitForSelector('.thumbs img');
 
     // Mode voyage forcé : l’accueil devient « Aujourd’hui »
@@ -212,6 +218,8 @@ const countIs = async (p, sel, n, msg) => { await p.waitForFunction(([s, n]) => 
     await B.waitForTimeout(200);
     await B.goto(base + '/#/itineraire');
     await countIs(B, 'a.jour', 17, 'dates reçues');
+    await B.goto(base + '/#/jour/2027-05-22');
+    await B.waitForSelector('#view .vig.p', { timeout: 5000 }); // la vignette a voyagé
     await B.goto(base + '/#/billets');
     await B.waitForSelector('text=pièces jointes sur l’autre téléphone', { timeout: 5000 });
 

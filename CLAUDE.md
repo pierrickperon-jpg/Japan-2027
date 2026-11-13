@@ -29,7 +29,14 @@ Les données vivent **uniquement** dans l'IndexedDB `japon-2027` de chaque tél�
 - Décision de Pierrick (13 novembre 2026) : les liens TikTok / Facebook que les deux voyageurs s'envoient servent **uniquement à la préparation**. On trie (`statut` : `a-trier`, `garde`, `ecarte`), on note l'essentiel (`titre`, `ville`, `note` : horaires, prix, astuce) et une idée gardée devient une étape (`idee.etapeId`, `etape.ideeId`). En mode voyage, les idées disparaissent de la barre du bas (toujours dans « Plus »), rien n'est effacé.
 - Ajout : coller un lien ou tout un paquet de messages (`extractUrls`) ; doublons écartés par `normUrl` (hôte sans `www.`/`m.`, paramètres de pistage `TRACKING` retirés). Sans lien, le texte devient une idée `source: 'note'`.
 - Android : `share_target` du manifeste (GET sur `./` avec `titre`, `texte`, `lien`) → écran `#/recu`. iPhone : Safari ne permet pas à une appli web d'apparaître dans le menu Partager → copier le lien puis « Coller ».
-- Titre automatique (`titre-auto`) : oEmbed TikTok / YouTube sur un toucher ; s'il échoue (réseau, CORS), message simple et saisie à la main. Facebook : impossible sans clé.
+- Image et titre de la vidéo (`video-auto`, remplace l'ancien `titre-auto`) : sur un toucher, oEmbed TikTok / YouTube (titre + `thumbnail_url` ; YouTube : `i.ytimg.com/vi/<id>/hqdefault.jpg`), puis l'image est téléchargée (CORS) et réduite en vignette. Le titre ne remplace pas un titre déjà saisi. En cas d'échec (réseau, CORS, Facebook) : message conseillant une capture d'écran.
+
+## Vignettes (lot 2, demande de Pierrick du 13 novembre 2026)
+
+- Champ additif `vignette` sur `idees` et `etapes` : petite image en data URL JPEG (480 px au plus, qualité 0,8, `vignetteDe`), donc lisible hors connexion et transmise par l'échange (même sans billets). `''` = pas d'image.
+- Ajout : « Ajouter une image » (`data-change="vignette"`, photo ou capture d'écran de la vidéo) ou « Image et titre de la vidéo ». Une étape sans image montre celle de son idée (`vigOf`).
+- Affichage : à gauche dans la liste des idées (`.vig`), dans le programme du jour et « Aujourd'hui » (`.vig.p`), en grand en haut de la fiche (`.vig-grande`). Toujours passer par `safeImg` (seules les images `data:image/png|jpeg|webp;base64` sont affichées) ; `validatePayload` refuse un fichier dont une vignette n'est pas une image.
+- Domaines d'images autorisés dans la CSP (`netlify.toml`, `connect-src`) : `i.ytimg.com`, `*.tiktokcdn.com`, `*.tiktokcdn-us.com`, `*.tiktokcdn-eu.com`, `*.ibyteimg.com`.
 
 ## Itinéraire
 
