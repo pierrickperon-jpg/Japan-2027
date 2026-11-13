@@ -171,6 +171,22 @@ const countIs = async (p, sel, n, msg) => { await p.waitForFunction(([s, n]) => 
     await A.goto(base + '/#/reglages');
     await A.click('[data-act="mode"][data-v="auto"]');
 
+    // Les vols changent : tout le voyage se décale de +2 jours (durée gardée), puis on revient
+    await A.goto(base + '/#/reglages');
+    await blurFill(A, '[data-set="debut"]', '2027-05-23');
+    await A.waitForFunction(() => document.querySelector('[data-set="fin"]') && document.querySelector('[data-set="fin"]').value === '2027-06-08', null, { timeout: 5000 });
+    await A.goto(base + '/#/jour/2027-05-24');
+    await A.waitForSelector('text=Ramen dans une ruelle', { timeout: 5000 });
+    assert.equal(await A.inputValue('[data-f="nuit"]'), 'Hôtel fictif Shinjuku', 'la nuit d’hôtel suit sa journée');
+    await A.goto(base + '/#/rappels');
+    await A.waitForSelector('text=samedi 10 avril 2027 à 03:00', { timeout: 5000 });
+    await A.goto(base + '/#/reglages');
+    await blurFill(A, '[data-set="debut"]', '2027-05-21');
+    await A.waitForFunction(() => document.querySelector('[data-set="fin"]') && document.querySelector('[data-set="fin"]').value === '2027-06-06', null, { timeout: 5000 });
+    await A.goto(base + '/#/jour/2027-05-22');
+    await A.waitForSelector('text=Ramen dans une ruelle', { timeout: 5000 });
+    assert.equal(await A.inputValue('[data-f="nuit"]'), 'Hôtel fictif Shinjuku');
+
     // Envoi vers l’autre téléphone (sans pièces jointes)
     await A.goto(base + '/#/echange');
     const [dl1] = await Promise.all([A.waitForEvent('download'), A.click('text=Préparer et envoyer')]);

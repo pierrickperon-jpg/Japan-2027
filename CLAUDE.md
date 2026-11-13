@@ -37,6 +37,7 @@ Les données vivent **uniquement** dans l'IndexedDB `japon-2027` de chaque tél�
 - Ordre : `etape.ordre` (flèches ↑ ↓) ; une étape avec une heure se range d'elle-même avant la première étape plus tardive (`placeByTime`).
 - Champs de l'étape : `titre`, `jour`, `heure`, `ville`, `adresse`, `adresseJa` (montrée en grand au taxi, `#/taxi/<id>`, avec « この住所までお願いします。 »), `horaires`, `prix`, `reservation`, `lien`, `note`.
 - Journée (`jours`) : `ville`, `nuit` (hôtel), `note`. « Carte du jour » : itinéraire Google Maps avec les étapes du jour (10 au plus).
+- Décaler le voyage (`shiftTrip`, lot 2) : quand le premier jour change et qu'un itinéraire existe, l'appli propose de tout décaler de n jours : `etapes.jour`, `rappels.dateVisite`, journées (nouvelle fiche `j-<date+n>`, l'ancienne passe en `deleted` pour que l'échange suive) et `SET.fin` (durée gardée). Copie de sécurité avant, une seule transaction. Billets et dépenses ne bougent pas (vraies réservations, vrais achats). Refuser = seul le premier jour change.
 
 ## Réservations à ne pas rater (`MODELES`, `rappelCalc`)
 

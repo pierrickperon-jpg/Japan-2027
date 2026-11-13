@@ -109,7 +109,7 @@ nav#nav a.on{color:var(--shu)}
    Japon 2027 — appli de préparation et de voyage (PWA, données locales).
    Règles : voir CLAUDE.md du dépôt. Aucune donnée personnelle dans ce fichier.
    ===================================================================== */
-const APP_VERSION = '2026.11.13-1';
+const APP_VERSION = '2026.11.13-2';
 const DB_NAME = 'japon-2027', DB_VERSION = 1;
 const STORES = ['idees', 'etapes', 'jours', 'rappels', 'billets', 'depenses', 'meta', 'sauvegardes'];
 const DATA_STORES = ['idees', 'etapes', 'jours', 'rappels', 'billets', 'depenses'];
@@ -431,6 +431,25 @@ async function reloadAll() {
   for (const s of DATA_STORES) S[s] = await getAll(s);
   SET = (await reqP(db.transaction('meta', 'readonly').objectStore('meta').get('settings'))) || { id: 'settings' };
   BLOBS.forEach(u => URL.revokeObjectURL(u)); BLOBS.clear();
+}
+// Décale journées, étapes et jours de visite de n jours (copie de sécurité avant, une seule transaction).
+// SET.debut est déjà à la nouvelle valeur ; le dernier jour suit pour garder la durée. Billets et dépenses ne bougent pas.
+async function shiftTrip(n) {
+  await createBackup('Avant décalage des dates');
+  const t = now(); const W = { etapes: [], rappels: [], jours: [] };
+  for (const e of live('etapes')) if (validYmd(e.jour)) W.etapes.push(Object.assign({}, e, { jour: addDays(e.jour, n), updatedAt: t }));
+  for (const r of live('rappels')) if (validYmd(r.dateVisite)) W.rappels.push(Object.assign({}, r, { dateVisite: addDays(r.dateVisite, n), updatedAt: t }));
+  const olds = live('jours').filter(j => validYmd(j.date)); const neu = new Map();
+  for (const j of olds) { const d = addDays(j.date, n); const ex = byId('jours', 'j-' + d); const r = Object.assign({}, j, { id: 'j-' + d, date: d, updatedAt: t, createdAt: ex ? ex.createdAt : j.createdAt }); delete r.deleted; neu.set(r.id, r); }
+  for (const j of olds) if (!neu.has(j.id)) W.jours.push(Object.assign({}, j, { deleted: true, updatedAt: t }));
+  W.jours.push(...neu.values());
+  if (validYmd(SET.fin)) SET.fin = addDays(SET.fin, n);
+  SET.id = 'settings'; SET.updatedAt = t;
+  const tx = db.transaction(['etapes', 'rappels', 'jours', 'meta'], 'readwrite');
+  for (const s of ['etapes', 'rappels', 'jours']) for (const r of W[s]) tx.objectStore(s).put(r);
+  tx.objectStore('meta').put(JSON.parse(JSON.stringify(SET)));
+  await txDone(tx);
+  await reloadAll();
 }
 async function shareOrDownload(name, mime, content) {
   const file = new File([content], name, { type: mime });
@@ -1003,6 +1022,16 @@ document.addEventListener('change', async e => {
       const k = el.dataset.set; const v = el.value.trim();
       if (k === 'voyageur') { const vs = (SET.voyageurs || []).slice(); vs[Number(el.dataset.idx)] = v; SET.voyageurs = vs; }
       else if (k === 'budgetPrevu') { const n = parseNum(v); SET.budgetPrevu = v && isFinite(n) && n > 0 ? n : null; }
+      else if (k === 'debut' && validYmd(SET.debut) && validYmd(v) && v !== SET.debut && (live('etapes').some(x => validYmd(x.jour)) || live('jours').length)) {
+        // Les vols changent : on propose de décaler tout le voyage (journées, étapes, jours de visite), durée gardée.
+        const old = SET.debut, n = diffDays(old, v);
+        const ok = confirm('Décaler tout le voyage de ' + (n > 0 ? '+' : '') + n + ' jour' + (Math.abs(n) > 1 ? 's' : '') + ' ?\n\nLes journées, les étapes et les jours de visite suivent, le dernier jour aussi. Les billets et les dépenses ne bougent pas.\n\nAnnuler = changer seulement le premier jour.');
+        SET.debut = v;
+        if (ok) {
+          try { await shiftTrip(n); } catch (err) { SET.debut = old; toast('Décalage impossible : ' + (err && err.message || err), true); render(); return; }
+          toast('Voyage décalé de ' + (n > 0 ? '+' : '') + n + ' j'); render(); return;
+        }
+      }
       else SET[k] = v || null;
       await saveSettings(); toast('Enregistré'); $('#eyebrow').textContent = defaultEyebrow(); nav.innerHTML = navHTML(location.hash);
       return;
